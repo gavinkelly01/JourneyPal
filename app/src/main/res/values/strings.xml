@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">JourneyPal</string>
+    <string name="title_home">Home</string>
+    <string name="title_guide">Guide</string>
+    <string name="title_storage">Storage</string>
+    <string name="title_camera">Camera</string>
+    <string name="google_maps_key">AIzaSyDpsrQbrtNUij18rJYryCmptI1jNmzPh3M</string>
+    <string name="home_page">Home Page</string>
+    <string name="safety_information">Safety Information</string>
+    <string name="transgender_non_binary">Transgender/Non-Binary</string>
+    <string name="immigrants_refugees">Immigrants/Refugees</string>
+    <string name="religious_freedom">Religious Freedom</string>
+    <string name="lgbtq">LGBTQ+</string>
+    <string name="disabilities">Disabilities</string>
+    <string name="women">Women</string>
+    <string name="close">Close</string>
+    <string name="people_of_colour">People of Colour</string> <!-- Defined the string value here -->
+</resources>
