@@ -1,4 +1,4 @@
-package com.example.journeypal.ui.dashboard
+package com.example.journeypal.ui.camera
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,11 +7,12 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.example.journeypal.databinding.FragmentCameraBinding
 import com.example.journeypal.databinding.FragmentGuideBinding
 
-class GuideFragment : Fragment() {
+class CameraFragment : Fragment() {
 
-private var _binding: FragmentGuideBinding? = null
+private var _binding: FragmentCameraBinding? = null
   // This property is only valid between onCreateView and
   // onDestroyView.
   private val binding get() = _binding!!
@@ -22,14 +23,12 @@ private var _binding: FragmentGuideBinding? = null
     savedInstanceState: Bundle?
   ): View {
     val dashboardViewModel =
-            ViewModelProvider(this).get(GuideViewModel::class.java)
+            ViewModelProvider(this).get(CameraViewModel::class.java)
 
-    _binding = FragmentGuideBinding.inflate(inflater, container, false)
+    _binding = FragmentCameraBinding.inflate(inflater, container, false)
     val root: View = binding.root
 
-    val textView: TextView = binding.textDashboard
     dashboardViewModel.text.observe(viewLifecycleOwner) {
-      textView.text = it
     }
     return root
   }

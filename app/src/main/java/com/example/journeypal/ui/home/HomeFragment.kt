@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
@@ -18,6 +19,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -30,6 +32,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private lateinit var googleMap: GoogleMap
+    private var currentMarker: Marker? = null
     private val filters = mutableMapOf<String, CheckBox>()
 
     private val defaultLatLng = LatLng(0.0, 0.0)
@@ -41,6 +44,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
+
         filters["women"] = binding.filterWomen
         filters["people_of_color"] = binding.filterPeopleOfColour
         filters["LGBTQ"] = binding.filterLgbt
@@ -49,23 +53,78 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         filters["immigrants_refugees"] = binding.filterImmigrantsRefugees
         filters["transgender_non_binary"] = binding.filterTransgenderNonBinary
 
-        filters.forEach { (_, checkBox) ->
-            checkBox.setOnCheckedChangeListener { _, _ -> updateVisibleFilters() }
-        }
 
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
+        val mapFragment =
+            childFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
-        binding.closeButton.setOnClickListener {
-            binding.safetyInfoTextView.visibility = View.GONE
-            binding.flagImageView.visibility = View.GONE
-            filters.forEach { (_, checkBox) ->
-                checkBox.visibility = View.VISIBLE
+
+        binding.minimizeButton.setOnClickListener {
+            if (binding.filterContainer.visibility == View.VISIBLE) {
+                binding.filterContainer.visibility = View.GONE
+                binding.minimizeButton.text = "Expand Filters"
+
+                val params = binding.mapFragment.layoutParams as ConstraintLayout.LayoutParams
+                params.height = resources.getDimensionPixelSize(R.dimen.map_minimized_height)
+                params.topToBottom = R.id.text_home
+                binding.mapFragment.layoutParams = params
+                binding.flagImageView.visibility = View.VISIBLE
+                binding.safetyInfoTextView.visibility = View.VISIBLE
+
+            } else {
+                binding.filterContainer.visibility = View.VISIBLE
+                binding.minimizeButton.text = "Minimize"
+
+                val params = binding.mapFragment.layoutParams as ConstraintLayout.LayoutParams
+                params.height = resources.getDimensionPixelSize(R.dimen.map_default_height)
+                params.topToBottom = R.id.resetMapButton
+                binding.mapFragment.layoutParams = params
+                binding.flagImageView.visibility = View.VISIBLE
+                binding.safetyInfoTextView.visibility = View.VISIBLE
             }
         }
+
+
         binding.resetMapButton.setOnClickListener {
             resetMapToDefault()
+            filters.values.forEach { it.isChecked = false }
+
         }
-            return binding.root
+
+        binding.layerButton.setOnClickListener {
+            showLayerSelectionDialog()
+        }
+
+        return binding.root
+    }
+
+    private fun showLayerSelectionDialog() {
+        val layerOptions = arrayOf("Google Maps", "Satellite View", "Terrain View")
+        val builder = android.app.AlertDialog.Builder(requireContext())
+        builder.setTitle("Select Map Layer")
+            .setItems(layerOptions) { _, which ->
+                when (which) {
+                    0 -> switchToGoogleMapLayer()
+                    1 -> switchToSatelliteLayer()
+                    2 -> switchToTerrainLayer()
+                }
+            }
+            .setCancelable(true)
+            .show()
+    }
+
+    private fun switchToGoogleMapLayer() {
+        googleMap.mapType = GoogleMap.MAP_TYPE_NORMAL
+        Toast.makeText(requireContext(), "Switched to Google Maps", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun switchToSatelliteLayer() {
+        googleMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+        Toast.makeText(requireContext(), "Switched to Satellite View", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun switchToTerrainLayer() {
+        googleMap.mapType = GoogleMap.MAP_TYPE_TERRAIN
+        Toast.makeText(requireContext(), "Switched to Terrain View", Toast.LENGTH_SHORT).show()
     }
 
     override fun onMapReady(map: GoogleMap) {
@@ -77,23 +136,19 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             if (selectedFilters.isNotEmpty()) {
                 showSafetyInfo(latLng, selectedFilters)
             } else {
-                Toast.makeText(requireContext(), "Please select at least one filter", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    requireContext(),
+                    "Please select at least one filter",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
 
     private fun getSelectedFilters(): List<String> {
-        val selectedFilters = filters.filter { it.value.isChecked }.map { it.key }
-        Log.d("FILTERS_SELECTED", "Selected filters: $selectedFilters")
-        return selectedFilters
+        return filters.filter { it.value.isChecked }.map { it.key }
     }
 
-    private fun updateVisibleFilters() {
-        val selectedFilters = getSelectedFilters()
-        filters.forEach { (filterKey, checkBox) ->
-            checkBox.visibility = if (filterKey in selectedFilters) View.VISIBLE else View.GONE
-        }
-    }
 
     private fun showSafetyInfo(latLng: LatLng, filters: List<String>) {
         lifecycleScope.launch {
@@ -130,14 +185,22 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                         }
                     } else {
                         requireActivity().runOnUiThread {
-                            Toast.makeText(requireContext(), "Failed to fetch data", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                requireContext(),
+                                "Failed to fetch data",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 requireActivity().runOnUiThread {
-                    Toast.makeText(requireContext(), "Error occurred: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "Error occurred: ${e.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }.start()
@@ -166,7 +229,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             infoBuilder.append("\nRatings data not available for $countryName.")
         }
 
-        // Add additional country information
         val countryData = jsonResponse.optJSONObject("ratings")
         val capital = countryData?.optString("capital", "No data")
         val population = countryData?.optInt("population", -1)
@@ -200,7 +262,9 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 binding.flagImageView.visibility = View.VISIBLE
             }
 
-            googleMap.addMarker(
+            currentMarker?.remove()
+
+            currentMarker = googleMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
                     .title("Safety Info for $countryName")
@@ -229,8 +293,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             "Unknown"
         }
     }
-
-
 
     override fun onDestroyView() {
         super.onDestroyView()
