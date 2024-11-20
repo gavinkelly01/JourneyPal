@@ -14,5 +14,16 @@
     <string name="disabilities">Disabilities</string>
     <string name="women">Women</string>
     <string name="close">Close</string>
-    <string name="people_of_colour">People of Colour</string> <!-- Defined the string value here -->
+    <string name="no_camera_available">No camera available on this device.</string>
+    <string name="people_of_colour">People of Colour</string>
+    <string name="point_your_camera_at_a_potential_hidden_camera_to_detect">Point your camera at a potential hidden camera to detect.</string>
+    <string name="turn_on_flashlight">Turn on Flashlight</string>
+    <string name="turn_off_flashlight">Turn off Flashlight</string>
+    <string name="storage">Storage</string>
+    <string name="title_files" />
+    <string name="flashlight" />
+    <string name="toggle_camera" />
+    <string name="flashlight_button" />
+    <string name="toggle_camera_button" />
+    <string name="switch_camera" />
 </resources>

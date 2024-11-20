@@ -169,7 +169,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
         val client = OkHttpClient()
         val request = Request.Builder()
-            .url("https://safety-ratingsapi-c68faaf3cc35.herokuapp.com/api/safety-ratings/$countryName")
+            .url("https://safetyratingapi.onrender.com/api/safety-ratings/$countryName")
             .build()
 
         Thread {

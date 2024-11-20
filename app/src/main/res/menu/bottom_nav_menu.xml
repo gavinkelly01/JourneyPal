@@ -1,22 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
         android:id="@+id/navigation_home"
-        android:icon="@drawable/ic_home_black_24dp"
+        android:icon="@drawable/home_app_logo_24px"
         android:title="@string/title_home"/>
 
     <item
         android:id="@+id/navigation_guide"
-        android:icon="@drawable/ic_dashboard_black_24dp"
-        android:title="@string/title_camera" />
+        android:icon="@drawable/baseline_menu_book_24"
+        android:title="@string/title_guide" />
 
     <item
         android:id="@+id/navigation_storage"
-        android:title="Storage" />
+        android:icon="@drawable/folder_24px"
+        android:title="@string/storage" />
+
     <item
         android:id="@+id/navigation_camera"
-        android:title="@string/title_camera" />
-
+        android:icon="@drawable/photo_camera_24px"
+    android:title="@string/title_camera" />
 </menu>

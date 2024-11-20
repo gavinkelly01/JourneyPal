@@ -5,9 +5,16 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 class GuideViewModel : ViewModel() {
+    private val _scamsLiveData = MutableLiveData<List<CountryGuide>>()
+    val scamsLiveData: LiveData<List<CountryGuide>> get() = _scamsLiveData
 
-    private val _text = MutableLiveData<String>().apply {
-        value = "This is dashboard Fragment"
+    fun fetchScams(country: String) {
+        val scams = getCountryGuideData(country)
+        _scamsLiveData.value = scams
     }
-    val text: LiveData<String> = _text
+
+    private fun getCountryGuideData(country: String): List<CountryGuide> {
+        return listOf(
+        )
+    }
 }

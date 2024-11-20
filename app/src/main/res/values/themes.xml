@@ -1,16 +1,33 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Base application theme with Dark/Light modes support. -->
     <style name="Theme.JourneyPal" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-        <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <!-- Primary brand color (for main action elements). -->
+        <item name="colorPrimary">@color/brandPrimary</item>
+        <item name="colorPrimaryVariant">@color/brandPrimaryVariant</item>
         <item name="colorOnPrimary">@color/white</item>
-        <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/teal_200</item>
-        <item name="colorSecondaryVariant">@color/teal_700</item>
+
+        <!-- Secondary brand color (used for accents and secondary actions). -->
+        <item name="colorSecondary">@color/brandSecondary</item>
+        <item name="colorSecondaryVariant">@color/brandSecondaryVariant</item>
         <item name="colorOnSecondary">@color/black</item>
-        <!-- Status bar color. -->
+
+        <!-- Status bar color (to match primary brand color). -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
-        <!-- Customize your theme here. -->
+
+        <!-- Surface color (background for content). -->
+        <item name="colorSurface">@color/surfaceBackground</item>
+
+        <!-- Background color of app (main background color). -->
+        <item name="android:windowBackground">@color/backgroundMain</item>
+
+        <!-- Error color for warnings or mistakes. -->
+        <item name="colorError">@color/redError</item>
+
+        <!-- Customize text appearance. -->
+        <item name="android:textColorPrimary">@color/textPrimary</item>
+        <item name="android:textColorSecondary">@color/textSecondary</item>
+
+        <!-- Customize the app's button color (raised buttons). -->
+        <item name="colorButtonNormal">@color/brandSecondary</item>
     </style>
 </resources>

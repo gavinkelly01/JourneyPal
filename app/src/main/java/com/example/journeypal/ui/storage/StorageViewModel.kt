@@ -1,4 +1,4 @@
-package com.example.journeypal.ui.notifications
+package com.example.journeypal.ui.storage
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

@@ -16,6 +16,11 @@ playServicesMaps = "19.0.0"
 uiTextAndroid = "1.7.5"
 firebaseInappmessaging = "21.0.1"
 fragment = "1.8.5"
+cameraView = "1.4.0"
+cameraLifecycle = "1.4.0"
+firebaseCrashlyticsBuildtools = "3.0.2"
+core = "1.9.0"
+coreVersion = "1.46.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +38,11 @@ play-services-maps = { group = "com.google.android.gms", name = "play-services-m
 androidx-ui-text-android = { group = "androidx.compose.ui", name = "ui-text-android", version.ref = "uiTextAndroid" }
 firebase-inappmessaging = { group = "com.google.firebase", name = "firebase-inappmessaging", version.ref = "firebaseInappmessaging" }
 androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
+androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraLifecycle" }
+firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
+androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }
+core = { group = "com.google.ar", name = "core", version.ref = "coreVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

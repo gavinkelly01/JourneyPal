@@ -1,10 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <!-- Primary brand colors -->
+    <color name="brandPrimary">#6200EE</color> <!-- A strong purple shade -->
+    <color name="brandPrimaryVariant">#3700B3</color> <!-- Darker purple variant -->
+    <color name="brandSecondary">#03DAC5</color> <!-- Teal accent color -->
+    <color name="brandSecondaryVariant">#018786</color> <!-- Darker teal variant -->
+
+    <!-- Neutral Colors -->
+    <color name="black">#000000</color> <!-- Black color -->
+    <color name="white">#FFFFFF</color> <!-- White color -->
+    <color name="greyLight">#F1F1F1</color> <!-- Light grey for background -->
+    <color name="greyDark">#757575</color> <!-- Dark grey for text or borders -->
+
+    <!-- Surface and background colors -->
+    <color name="surfaceBackground">#FFFFFF</color> <!-- White background for content -->
+    <color name="backgroundMain">#F4F4F9</color> <!-- Very light grey background for overall layout -->
+
+    <!-- Text colors -->
+    <color name="textPrimary">#212121</color> <!-- Dark text for better readability -->
+    <color name="textSecondary">#757575</color> <!-- Light grey text for secondary content -->
+
+    <!-- Error and Alert colors -->
+    <color name="redError">#D32F2F</color> <!-- Error color for alerts, warnings, or form errors -->
+
+    <!-- Missing colors (added for the error you mentioned) -->
+    <color name="purple_200">#BB86FC</color> <!-- Light purple for backgrounds -->
+    <color name="purple_500">#6200EE</color> <!-- Original purple -->
+    <color name="purple_700">#3700B3</color> <!-- Darker purple -->
+    <color name="teal_200">#03DAC5</color> <!-- Teal -->
+    <color name="teal_700">#018786</color> <!-- Darker teal -->
 </resources>

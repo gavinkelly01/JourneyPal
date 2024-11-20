@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/navigation_home">
+    app:startDestination="@id/navigation_home">
 
     <fragment
         android:id="@+id/navigation_home"
@@ -18,8 +18,25 @@
         tools:layout="@layout/fragment_guide" />
 
     <fragment
+        android:id="@+id/navigation_camera"
+        android:name="com.example.journeypal.ui.camera.CameraFragment"
+        android:label="@string/title_camera"
+        tools:layout="@layout/fragment_camera" />
+
+    <fragment
         android:id="@+id/navigation_storage"
-        android:name="com.example.journeypal.ui.notifications.StorageFragment"
+        android:name="com.example.journeypal.ui.storage.LoginFragment"
         android:label="@string/title_storage"
-        tools:layout="@layout/fragment_storage" />
+        tools:layout="@layout/fragment_login">
+        <action
+            android:id="@+id/action_loginFragment_to_filesFragment"
+            app:destination="@id/navigation_files" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/navigation_files"
+        android:name="com.example.journeypal.ui.storage.FilesFragment"
+        android:label="@string/title_files"
+        tools:layout="@layout/fragment_files" />
+
 </navigation>
