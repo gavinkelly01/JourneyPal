@@ -16,8 +16,6 @@ class CountryGuideAdapter(
 ) : RecyclerView.Adapter<CountryGuideAdapter.CountryGuideViewHolder>() {
 
     private var countryGuides = listOf<CountryGuide>()
-
-    // Submit the list of country guides to the adapter
     fun submitList(list: List<CountryGuide>) {
         countryGuides = list
         notifyDataSetChanged()
@@ -31,17 +29,11 @@ class CountryGuideAdapter(
     override fun onBindViewHolder(holder: CountryGuideViewHolder, position: Int) {
         val countryGuide = countryGuides[position]
 
-        // Set country name
         holder.countryNameTextView.text = countryGuide.countryName
-        // Set safety tips
         holder.safetyTipsTextView.text = countryGuide.safetyTips
-
-        // Load image using Glide
         Glide.with(context)
             .load(countryGuide.imageUrl)
             .into(holder.countryImageView)
-
-        // Set video URL
         holder.webView.loadUrl(countryGuide.videoUrl)
     }
 

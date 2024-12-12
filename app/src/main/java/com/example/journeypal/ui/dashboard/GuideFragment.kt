@@ -24,24 +24,15 @@ class GuideFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.fragment_guide, container, false)
-
-        // Initialize the ViewModel
         guideViewModel = ViewModelProvider(this).get(GuideViewModel::class.java)
-
-        // Initialize WebView
         webView = view.findViewById(R.id.webView)
-
         loadTravelGuide()
-
         countryGuideAdapter = CountryGuideAdapter(requireContext())
-
         guideViewModel.scamsLiveData.observe(viewLifecycleOwner, Observer { countryGuides ->
             countryGuideAdapter.submitList(countryGuides)
         })
 
-        // Trigger fetching scams data for a country
         guideViewModel.fetchScams("Thailand")
-
         return view
     }
 
@@ -55,7 +46,6 @@ class GuideFragment : Fragment() {
         activity?.actionBar?.setDisplayHomeAsUpEnabled(false)
     }
 
-    // Method to load the travel guide content
     private fun loadTravelGuide() {
         val travelGuideContent = """
         <html>

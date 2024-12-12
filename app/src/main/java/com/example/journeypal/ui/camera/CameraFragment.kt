@@ -178,7 +178,6 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
         val ySize = yuvPlanes[0].buffer.remaining()
         val uSize = yuvPlanes[1].buffer.remaining()
         val vSize = yuvPlanes[2].buffer.remaining()
-
         val yuvData = ByteArray(ySize + uSize + vSize)
 
         yuvPlanes[0].buffer.get(yuvData, 0, ySize)
@@ -202,7 +201,6 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
     private fun scanForHiddenCamera(bitmap: Bitmap) {
         val mat = Mat()
         Utils.bitmapToMat(bitmap, mat)
-
         Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2GRAY)
         Imgproc.GaussianBlur(mat, mat, Size(15.0, 15.0), 0.0)
         val circles = Mat()
@@ -216,15 +214,13 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
                 val centerX = circle[0].toInt()
                 val centerY = circle[1].toInt()
                 val radius = circle[2].toInt()
-                Imgproc.circle(mat, org.opencv.core.Point(centerX.toDouble(), centerY.toDouble()), radius, Scalar(0.0, 255.0, 0.0), 4)  // Lime green ring
+                Imgproc.circle(mat, org.opencv.core.Point(centerX.toDouble(), centerY.toDouble()), radius, Scalar(0.0, 255.0, 0.0), 4)
                 Log.d("CameraFragment", "Hidden camera detected at ($centerX, $centerY) with radius $radius")
             }
         }
 
         Utils.matToBitmap(mat, bitmap)
-
-        val rotatedBitmap = rotateBitmap(bitmap, 90) // Rotate 90 degrees right
-
+        val rotatedBitmap = rotateBitmap(bitmap, 90)
         imageView.setImageBitmap(rotatedBitmap)
     }
 

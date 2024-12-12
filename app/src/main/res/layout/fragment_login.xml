@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".ui.storage.LoginFragment">
 
-    <!-- Email input field -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/emailInputLayout"
         android:layout_width="0dp"
@@ -25,7 +24,6 @@
         android:inputType="textEmailAddress" />
 </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Password input field -->
 <com.google.android.material.textfield.TextInputLayout
 android:id="@+id/passwordInputLayout"
 android:layout_width="0dp"
@@ -44,7 +42,6 @@ android:importantForAccessibility="yes"
 android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Login button -->
 <Button
 android:id="@+id/loginButton"
 android:layout_width="0dp"
@@ -56,7 +53,6 @@ app:layout_constraintEnd_toEndOf="parent"
 android:layout_marginTop="20dp"
     android:importantForAccessibility="yes" />
 
-    <!-- Register button -->
 <Button
 android:id="@+id/registerButton"
 android:layout_width="0dp"

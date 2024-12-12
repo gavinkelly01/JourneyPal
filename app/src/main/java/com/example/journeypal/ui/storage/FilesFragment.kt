@@ -1,4 +1,3 @@
-// FilesFragment.kt
 package com.example.journeypal.ui.storage
 
 import android.os.Bundle
@@ -13,6 +12,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.journeypal.R
+import java.io.File
 
 class FilesFragment : Fragment(R.layout.fragment_files) {
 
@@ -28,24 +28,32 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
             findNavController().navigateUp()
         }
 
-        // Initialize the RecyclerView
         recyclerView = view.findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(context)
 
-        // Initialize the file adapter (You will define this later)
-        fileAdapter = FileAdapter(getSampleFiles())
+        val fileList = getSampleFiles()
+        fileAdapter = FileAdapter(fileList, { file -> deleteFile(file) }, { file -> downloadFile(file) })
         recyclerView.adapter = fileAdapter
 
-        // Setup the Upload Button
         uploadButton = view.findViewById(R.id.uploadButton)
         uploadButton.setOnClickListener {
-            // Handle file upload action here
             Toast.makeText(requireContext(), "Upload functionality here", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Sample function to generate file data (You can replace this with actual data)
-    private fun getSampleFiles(): List<String> {
-        return listOf("File 1", "File 2", "File 3", "File 4", "File 5")
+    private fun getSampleFiles(): List<File> {
+        return listOf(
+            File("/path/to/file1.txt"),
+            File("/path/to/file2.txt"),
+            File("/path/to/file3.txt")
+        )
+    }
+
+    private fun deleteFile(file: File) {
+        Toast.makeText(requireContext(), "Deleted ${file.name}", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun downloadFile(file: File) {
+        Toast.makeText(requireContext(), "Download ${file.name} clicked", Toast.LENGTH_SHORT).show()
     }
 }

@@ -5,11 +5,6 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Search EditText for searching countries -->
-
-    <!-- RecyclerView to display country safety guides -->
-
-    <!-- WebView to display the travel guide content -->
     <android.webkit.WebView
         android:id="@+id/webView"
         android:layout_width="411dp"
