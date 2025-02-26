@@ -9,16 +9,14 @@ import android.os.Bundle
 import android.os.Environment
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Log
 import android.widget.Toast
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.journeypal.databinding.FragmentSecurestorageBinding
-import com.example.journeypal.ui.storage.FileAdapter
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -28,12 +26,10 @@ import javax.crypto.CipherInputStream
 import javax.crypto.CipherOutputStream
 import javax.crypto.KeyGenerator
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.IvParameterSpec
 
 class SecureStorageActivity : AppCompatActivity() {
 
     private lateinit var binding: FragmentSecurestorageBinding
-    private lateinit var encryptedFile: File
     private val fileList = mutableListOf<File>()
     private lateinit var fileAdapter: FileAdapter
 
@@ -49,7 +45,16 @@ class SecureStorageActivity : AppCompatActivity() {
 
         generateKey()
 
-        fileAdapter = FileAdapter(fileList, { file -> deleteFile(file) }, { file -> downloadFile(file) })
+        fileAdapter = FileAdapter(fileList, object : FileAdapter.FileActionListener {
+            override fun onDelete(file: File) {
+                deleteFile(file)
+            }
+
+            override fun onDownload(file: File) {
+                downloadFile(file)
+            }
+        })
+
         binding.fileRecyclerView.layoutManager = LinearLayoutManager(this)
         binding.fileRecyclerView.adapter = fileAdapter
 
@@ -62,7 +67,6 @@ class SecureStorageActivity : AppCompatActivity() {
                 showToast("No files available to download.")
             }
         }
-
     }
 
     private fun generateKey() {
@@ -147,69 +151,68 @@ class SecureStorageActivity : AppCompatActivity() {
 
     private fun encryptAndUploadFile(file: File) {
         try {
-            encryptFile(file)
-            showToast("File uploaded and encrypted successfully!")
-            fileList.add(file)
+            val encryptedFile = encryptFile(file)
+            fileList.add(encryptedFile)
             fileAdapter.notifyDataSetChanged()
+            showToast("File uploaded and encrypted successfully!")
         } catch (e: Exception) {
             e.printStackTrace()
             showToast("Error uploading file: ${e.message}")
         }
     }
 
-    private fun encryptFile(file: File) {
+    private fun encryptFile(file: File): File {
         try {
             val cipher = getCipher(Cipher.ENCRYPT_MODE)
             val fileInputStream = FileInputStream(file)
-            encryptedFile = File(filesDir, "${file.name}.enc")
+            val encryptedFile = File(filesDir, "${file.name}.enc")
             val fileOutputStream = FileOutputStream(encryptedFile)
-
             val iv = cipher.iv
             fileOutputStream.write(iv)
 
-            val cipherOutputStream = CipherOutputStream(fileOutputStream, cipher)
-            val buffer = ByteArray(1024)
-            var len: Int
-            while (fileInputStream.read(buffer).also { len = it } != -1) {
-                cipherOutputStream.write(buffer, 0, len)
+            CipherOutputStream(fileOutputStream, cipher).use { cipherOutputStream ->
+                val buffer = ByteArray(1024)
+                var len: Int
+                while (fileInputStream.read(buffer).also { len = it } != -1) {
+                    cipherOutputStream.write(buffer, 0, len)
+                }
             }
 
-            cipherOutputStream.close()
             fileInputStream.close()
+            return encryptedFile
         } catch (e: Exception) {
             e.printStackTrace()
             throw Exception("Failed to encrypt the file.")
         }
     }
 
-    private fun getCipher(mode: Int): Cipher {
+    private fun getCipher(mode: Int, iv: ByteArray? = null): Cipher {
         try {
-            val keyStore = KeyStore.getInstance("AndroidKeyStore")
-            keyStore.load(null)
-
-            val key = keyStore.getKey("storage_key", null)
-            if (key == null) {
-                throw Exception("Encryption key not found.")
-            }
+            val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+            val secretKey = keyStore.getKey("storage_key", null) ?: throw Exception("Encryption key not found.")
 
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(mode, key)
+            if (mode == Cipher.ENCRYPT_MODE) {
+                cipher.init(mode, secretKey)
+            } else {
+                if (iv == null) throw Exception("Missing IV for decryption.")
+                cipher.init(mode, secretKey, GCMParameterSpec(128, iv))
+            }
             return cipher
         } catch (e: Exception) {
             e.printStackTrace()
-            throw Exception("Failed to initialize cipher.")
+            throw Exception("Failed to initialize cipher: ${e.message}")
         }
     }
 
     private fun downloadFile(file: File) {
-        if (fileList.isEmpty()) {
-            showToast("No files available to download.")
+        if (!file.exists()) {
+            showToast("File not found.")
             return
         }
 
-        val fileToDownload = fileList[0]
         try {
-            val decryptedFile = decryptFile(fileToDownload)
+            val decryptedFile = decryptFile(file)
 
             if (isWritePermissionGranted()) {
                 saveDecryptedFile(decryptedFile)
@@ -246,50 +249,30 @@ class SecureStorageActivity : AppCompatActivity() {
         }
     }
 
-    private fun decryptFile(file: File): File {
-        val fileInputStream = FileInputStream(file)
-        val iv = ByteArray(12)
-        fileInputStream.read(iv)
-
-        val cipher = getCipher(Cipher.DECRYPT_MODE, iv)
-        val decryptedFile = File(filesDir, "decrypted_${file.name}")
-        val fileOutputStream = FileOutputStream(decryptedFile)
-
-        val cipherInputStream = CipherInputStream(fileInputStream, cipher)
-        val buffer = ByteArray(1024)
-        var len: Int
-        while (cipherInputStream.read(buffer).also { len = it } != -1) {
-            fileOutputStream.write(buffer, 0, len)
-        }
-
-        cipherInputStream.close()
-        fileInputStream.close()
-        fileOutputStream.close()
-
-        return decryptedFile
-    }
-
-    private fun getCipher(mode: Int, iv: ByteArray? = null): Cipher {
+    private fun decryptFile(encryptedFile: File): File {
         try {
-            val keyStore = KeyStore.getInstance("AndroidKeyStore")
-            keyStore.load(null)
+            FileInputStream(encryptedFile).use { fileInputStream ->
+                val iv = ByteArray(12)
+                if (fileInputStream.read(iv) != iv.size) {
+                    throw Exception("Invalid IV length. Possible file corruption.")
+                }
 
-            val key = keyStore.getKey("storage_key", null)
-            if (key == null) {
-                throw Exception("Encryption key not found.")
+                val cipher = getCipher(Cipher.DECRYPT_MODE, iv)
+                val decryptedFile = File(filesDir, encryptedFile.name.removeSuffix(".enc"))
+                FileOutputStream(decryptedFile).use { fileOutputStream ->
+                    CipherInputStream(fileInputStream, cipher).use { cipherInputStream ->
+                        val buffer = ByteArray(1024)
+                        var len: Int
+                        while (cipherInputStream.read(buffer).also { len = it } != -1) {
+                            fileOutputStream.write(buffer, 0, len)
+                        }
+                    }
+                }
+                return decryptedFile
             }
-
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            if (iv != null) {
-                val gcmParameterSpec = GCMParameterSpec(128, iv)
-                cipher.init(mode, key, gcmParameterSpec)
-            } else {
-                cipher.init(mode, key)
-            }
-            return cipher
         } catch (e: Exception) {
             e.printStackTrace()
-            throw Exception("Failed to initialize cipher.")
+            throw Exception("Failed to decrypt file: ${e.message}")
         }
     }
 
@@ -323,4 +306,5 @@ class SecureStorageActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_CODE_PERMISSION = 1
     }
+
 }

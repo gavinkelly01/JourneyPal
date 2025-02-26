@@ -2,30 +2,56 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:padding="8dp"
     android:layout_marginBottom="8dp">
 
+    <ImageView
+        android:id="@+id/filePreview"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        android:layout_gravity="center_horizontal" />
+
     <TextView
-        android:id="@+id/fileName"
-        android:layout_width="0dp"
+        android:id="@+id/textPreview"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="File Name"
+        android:padding="4dp"
+        android:textColor="#000000"
+        android:maxLines="3"
         android:ellipsize="end"
-        android:maxLines="1"
-        android:singleLine="true"
-        android:textColor="#000000" />
+        android:visibility="gone" />
 
-    <Button
-        android:id="@+id/deleteButton"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Delete" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
-    <Button
-        android:id="@+id/downloadButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Download" />
+        <TextView
+            android:id="@+id/fileName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="File Name"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:textColor="#000000" />
+
+        <Button
+            android:id="@+id/deleteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Delete" />
+
+        <Button
+            android:id="@+id/downloadButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Download" />
+    </LinearLayout>
+
 </LinearLayout>

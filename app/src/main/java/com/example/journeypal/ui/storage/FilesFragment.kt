@@ -1,9 +1,7 @@
 package com.example.journeypal.ui.storage
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.addCallback
@@ -23,7 +21,7 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        requireActivity().actionBar?.setDisplayHomeAsUpEnabled(true)
+        (requireActivity() as? androidx.appcompat.app.AppCompatActivity)?.supportActionBar?.setDisplayHomeAsUpEnabled(true)
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             findNavController().navigateUp()
         }
@@ -32,7 +30,16 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
         recyclerView.layoutManager = LinearLayoutManager(context)
 
         val fileList = getSampleFiles()
-        fileAdapter = FileAdapter(fileList, { file -> deleteFile(file) }, { file -> downloadFile(file) })
+        fileAdapter = FileAdapter(fileList, object : FileAdapter.FileActionListener {
+            override fun onDelete(file: File) {
+                deleteFile(file)
+            }
+
+            override fun onDownload(file: File) {
+                downloadFile(file)
+            }
+        })
+
         recyclerView.adapter = fileAdapter
 
         uploadButton = view.findViewById(R.id.uploadButton)
@@ -42,18 +49,38 @@ class FilesFragment : Fragment(R.layout.fragment_files) {
     }
 
     private fun getSampleFiles(): List<File> {
+        val dir = requireContext().filesDir
         return listOf(
-            File("/path/to/file1.txt"),
-            File("/path/to/file2.txt"),
-            File("/path/to/file3.txt")
-        )
+            File(dir, "file1.txt"),
+            File(dir, "file2.png"),
+            File(dir, "file3.jpg")
+        ).filter { it.exists() } // Ensuring files actually exist
     }
 
     private fun deleteFile(file: File) {
-        Toast.makeText(requireContext(), "Deleted ${file.name}", Toast.LENGTH_SHORT).show()
+        if (file.delete()) {
+            Toast.makeText(requireContext(), "Deleted ${file.name}", Toast.LENGTH_SHORT).show()
+            refreshFileList()
+        } else {
+            Toast.makeText(requireContext(), "Failed to delete ${file.name}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun downloadFile(file: File) {
         Toast.makeText(requireContext(), "Download ${file.name} clicked", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun refreshFileList() {
+        val updatedFiles = getSampleFiles()
+        fileAdapter = FileAdapter(updatedFiles, object : FileAdapter.FileActionListener {
+            override fun onDelete(file: File) {
+                deleteFile(file)
+            }
+
+            override fun onDownload(file: File) {
+                downloadFile(file)
+            }
+        })
+        recyclerView.adapter = fileAdapter
     }
 }

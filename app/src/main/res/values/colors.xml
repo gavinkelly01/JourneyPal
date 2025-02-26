@@ -5,7 +5,7 @@
     <color name="brandPrimaryVariant">#3700B3</color> <!-- Darker purple variant -->
     <color name="brandSecondary">#03DAC5</color> <!-- Teal accent color -->
     <color name="brandSecondaryVariant">#018786</color> <!-- Darker teal variant -->
-
+    <color name="background_color">#FFFFFF</color>
     <!-- Neutral Colors -->
     <color name="black">#000000</color> <!-- Black color -->
     <color name="white">#FFFFFF</color> <!-- White color -->

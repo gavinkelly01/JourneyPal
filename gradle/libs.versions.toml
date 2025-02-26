@@ -21,6 +21,8 @@ cameraLifecycle = "1.4.0"
 firebaseCrashlyticsBuildtools = "3.0.2"
 core = "1.9.0"
 coreVersion = "1.46.0"
+objectDetectionCommon = "18.0.0"
+mediationTestSuite = "3.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -43,6 +45,8 @@ androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycl
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
 androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }
 core = { group = "com.google.ar", name = "core", version.ref = "coreVersion" }
+object-detection-common = { group = "com.google.mlkit", name = "object-detection-common", version.ref = "objectDetectionCommon" }
+mediation-test-suite = { group = "com.google.android.ads", name = "mediation-test-suite", version.ref = "mediationTestSuite" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
