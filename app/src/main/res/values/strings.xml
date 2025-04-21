@@ -3,7 +3,9 @@
     <string name="title_home">Home</string>
     <string name="title_guide">Guide</string>
     <string name="title_storage">Storage</string>
+    <string name="title_livealerts">Live Alerts</string>
     <string name="title_camera">Camera</string>
+    <string name="title_currency">Currency</string>
     <string name="google_maps_key">AIzaSyDpsrQbrtNUij18rJYryCmptI1jNmzPh3M</string>
     <string name="home_page">Home Page</string>
     <string name="safety_information">Safety Information</string>
@@ -22,8 +24,12 @@
     <string name="storage">Storage</string>
     <string name="title_files" />
     <string name="flashlight" />
+    <string name="title_more">More</string>
     <string name="toggle_camera" />
     <string name="flashlight_button" />
     <string name="toggle_camera_button" />
     <string name="switch_camera" />
+    <string name="title_translator" >Translate</string>
+    <string name="title_emergency">Emergency SOS</string>
+    <string name="title_location"> Live Location</string>
 </resources>

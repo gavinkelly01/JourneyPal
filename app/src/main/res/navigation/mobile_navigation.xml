@@ -18,6 +18,36 @@
         tools:layout="@layout/fragment_guide" />
 
     <fragment
+        android:id="@+id/currency"
+        android:name="com.example.journeypal.ui.currency.CurrencyFragment"
+        android:label="@string/title_currency"
+        tools:layout="@layout/fragment_currency" />
+
+    <fragment
+        android:id="@+id/translator"
+        android:name="com.example.journeypal.ui.translator.TranslatorFragment"
+        android:label="@string/title_translator"
+        tools:layout="@layout/fragment_translator" />
+
+    <fragment
+        android:id="@+id/navigation_more"
+        android:name="com.example.journeypal.ui.more.MoreFragment"
+        android:label="@string/title_more"
+        tools:layout="@layout/fragment_more" />
+
+    <fragment
+        android:id="@+id/emergency_sos"
+        android:name="com.example.journeypal.ui.emergency.EmergencySosFragment"
+        android:label="@string/title_emergency"
+        tools:layout="@layout/fragment_camera" />
+
+    <fragment
+        android:id="@+id/livealerts"
+        android:name="com.example.journeypal.ui.LiveAlerts.LiveAlerts"
+        android:label="@string/title_location"
+        tools:layout="@layout/fragment_travel_alerts" />
+
+    <fragment
         android:id="@+id/navigation_camera"
         android:name="com.example.journeypal.ui.camera.CameraFragment"
         android:label="@string/title_camera"

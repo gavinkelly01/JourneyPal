@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 import com.example.journeypal.databinding.FragmentSecurestorageBinding
 import java.io.File
 import java.io.FileInputStream
@@ -67,7 +69,19 @@ class SecureStorageActivity : AppCompatActivity() {
                 showToast("No files available to download.")
             }
         }
+
+        // Load previously stored encrypted files for this user
+        val email = getLoggedInUserEmail()
+        if (email != null) {
+            val userDir = File(filesDir, email)
+            if (userDir.exists()) {
+                fileList.addAll(userDir.listFiles()?.filter { it.name.endsWith(".enc") } ?: emptyList())
+                fileAdapter.notifyDataSetChanged()
+            }
+        }
     }
+
+
 
     private fun generateKey() {
         try {
@@ -77,14 +91,12 @@ class SecureStorageActivity : AppCompatActivity() {
             if (keyStore.containsAlias("storage_key")) return
 
             val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-            keyGenerator.apply {
-                init(
-                    KeyGenParameterSpec.Builder("storage_key", KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
-                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                        .build()
-                )
-            }
+            keyGenerator.init(
+                KeyGenParameterSpec.Builder("storage_key", KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                    .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                    .build()
+            )
             keyGenerator.generateKey()
         } catch (e: Exception) {
             e.printStackTrace()
@@ -103,10 +115,7 @@ class SecureStorageActivity : AppCompatActivity() {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             true
         } else {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
         }
     }
 
@@ -140,7 +149,7 @@ class SecureStorageActivity : AppCompatActivity() {
         val contentResolver: ContentResolver = contentResolver
         return try {
             val inputStream = contentResolver.openInputStream(uri)
-            val tempFile = File.createTempFile("upload_", ".tmp", filesDir)
+            val tempFile = File.createTempFile("upload_", ".tmp", cacheDir)
             inputStream?.copyTo(FileOutputStream(tempFile))
             tempFile
         } catch (e: Exception) {
@@ -151,7 +160,16 @@ class SecureStorageActivity : AppCompatActivity() {
 
     private fun encryptAndUploadFile(file: File) {
         try {
-            val encryptedFile = encryptFile(file)
+            val email = getLoggedInUserEmail()
+            if (email == null) {
+                showToast("User not authenticated.")
+                return
+            }
+
+            val userDir = File(filesDir, email)
+            if (!userDir.exists()) userDir.mkdirs()
+
+            val encryptedFile = encryptFile(file, userDir)
             fileList.add(encryptedFile)
             fileAdapter.notifyDataSetChanged()
             showToast("File uploaded and encrypted successfully!")
@@ -161,29 +179,20 @@ class SecureStorageActivity : AppCompatActivity() {
         }
     }
 
-    private fun encryptFile(file: File): File {
-        try {
-            val cipher = getCipher(Cipher.ENCRYPT_MODE)
-            val fileInputStream = FileInputStream(file)
-            val encryptedFile = File(filesDir, "${file.name}.enc")
-            val fileOutputStream = FileOutputStream(encryptedFile)
-            val iv = cipher.iv
-            fileOutputStream.write(iv)
+    private fun encryptFile(file: File, directory: File): File {
+        val cipher = getCipher(Cipher.ENCRYPT_MODE)
+        val encryptedFile = File(directory, "${file.name}.enc")
+        val iv = cipher.iv
 
-            CipherOutputStream(fileOutputStream, cipher).use { cipherOutputStream ->
-                val buffer = ByteArray(1024)
-                var len: Int
-                while (fileInputStream.read(buffer).also { len = it } != -1) {
-                    cipherOutputStream.write(buffer, 0, len)
+        FileInputStream(file).use { input ->
+            FileOutputStream(encryptedFile).use { output ->
+                output.write(iv)
+                CipherOutputStream(output, cipher).use { cipherOut ->
+                    input.copyTo(cipherOut)
                 }
             }
-
-            fileInputStream.close()
-            return encryptedFile
-        } catch (e: Exception) {
-            e.printStackTrace()
-            throw Exception("Failed to encrypt the file.")
         }
+        return encryptedFile
     }
 
     private fun getCipher(mode: Int, iv: ByteArray? = null): Cipher {
@@ -250,34 +259,28 @@ class SecureStorageActivity : AppCompatActivity() {
     }
 
     private fun decryptFile(encryptedFile: File): File {
-        try {
-            FileInputStream(encryptedFile).use { fileInputStream ->
-                val iv = ByteArray(12)
-                if (fileInputStream.read(iv) != iv.size) {
-                    throw Exception("Invalid IV length. Possible file corruption.")
-                }
-
-                val cipher = getCipher(Cipher.DECRYPT_MODE, iv)
-                val decryptedFile = File(filesDir, encryptedFile.name.removeSuffix(".enc"))
-                FileOutputStream(decryptedFile).use { fileOutputStream ->
-                    CipherInputStream(fileInputStream, cipher).use { cipherInputStream ->
-                        val buffer = ByteArray(1024)
-                        var len: Int
-                        while (cipherInputStream.read(buffer).also { len = it } != -1) {
-                            fileOutputStream.write(buffer, 0, len)
-                        }
-                    }
-                }
-                return decryptedFile
+        FileInputStream(encryptedFile).use { input ->
+            val iv = ByteArray(12)
+            if (input.read(iv) != iv.size) {
+                throw Exception("Invalid IV length. Possible file corruption.")
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            throw Exception("Failed to decrypt file: ${e.message}")
+
+            val cipher = getCipher(Cipher.DECRYPT_MODE, iv)
+            val decryptedFile = File(filesDir, encryptedFile.name.removeSuffix(".enc"))
+            FileOutputStream(decryptedFile).use { output ->
+                CipherInputStream(input, cipher).use { cipherIn ->
+                    cipherIn.copyTo(output)
+                }
+            }
+            return decryptedFile
         }
     }
 
     private fun saveDecryptedFile(decryptedFile: File) {
-        val destination = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), decryptedFile.name)
+        val destination = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            decryptedFile.name
+        )
         try {
             decryptedFile.copyTo(destination, overwrite = true)
             decryptedFile.delete()
@@ -299,6 +302,23 @@ class SecureStorageActivity : AppCompatActivity() {
         }
     }
 
+    private fun getLoggedInUserEmail(): String? {
+        return try {
+            val masterKey = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+            val prefs = EncryptedSharedPreferences.create(
+                "secure_user_credentials",
+                masterKey,
+                this,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+            prefs.getString("secure_user_email", null)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
@@ -306,5 +326,4 @@ class SecureStorageActivity : AppCompatActivity() {
     companion object {
         private const val REQUEST_CODE_PERMISSION = 1
     }
-
 }

@@ -8,274 +8,378 @@
     android:background="@color/background_color"
     tools:context=".ui.home.HomeFragment">
 
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/text_home"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
+    <!-- Header Section -->
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
         android:layout_marginTop="16dp"
-        android:text="@string/home_page"
-        android:textAlignment="center"
-        android:textAppearance="?attr/textAppearanceHeadlineMedium"
-        android:textColor="?attr/colorOnSurface"
-        android:lineSpacingExtra="4dp"
-        android:gravity="center"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginStart="16dp"
+        android:background="@android:color/transparent"
+        android:contentDescription="App Logo"
+        android:scaleType="centerInside"
+        android:src="@drawable/logo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.appcompat.widget.SearchView
-        android:id="@+id/searchView"
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/text_home"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:queryHint="Search for a country..."
-        android:focusable="true"
-        android:importantForAccessibility="yes"
-        android:elevation="2dp"
-        app:layout_constraintEnd_toStartOf="@+id/resetMapButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/text_home" />
+        android:textSize="24sp"
+        android:text="@string/home_page"
+        android:textAlignment="textStart"
+        android:textAppearance="?attr/textAppearanceHeadlineMedium"
+        android:textColor="?attr/colorOnSurface"
+        android:textStyle="bold"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/logo"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/resetMapButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <!-- Modern Search Bar (Grindr-style) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/search_card"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:text="Reset Map"
-        android:textColor="?attr/colorOnPrimary"
-        android:textSize="14sp"
-        app:iconGravity="textStart"
-        app:backgroundTint="?attr/colorPrimary"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/text_home"
-        app:layout_constraintBottom_toBottomOf="@id/searchView" />
+        android:layout_marginTop="16dp"
+        app:cardCornerRadius="28dp"
+        app:cardElevation="4dp"
+        app:layout_constraintTop_toBottomOf="@id/logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/search_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="16dp"
+                android:src="@drawable/icons8_search"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?attr/colorOnSurface" />
+
+            <EditText
+                android:id="@+id/searchView"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:background="@null"
+                android:hint="Search for countries"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textColorHint="#757575"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/filter_button"
+                app:layout_constraintStart_toEndOf="@+id/search_icon"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageButton
+                android:id="@+id/filter_button"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Filters"
+                android:src="@drawable/icons8_filter_100"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.978"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="?attr/colorPrimary"
+                android:scaleType="centerInside" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Collapsible Filter Container (Initially Collapsed) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/filter_container"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        app:cardElevation="4dp"
-        app:cardCornerRadius="8dp"
-        app:cardBackgroundColor="?attr/colorSurface"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchView">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Filter Safety Information By:"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:textColor="?attr/colorOnSurface"
-                android:padding="8dp" />
-
-            <GridLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:columnCount="3"
-                android:horizontalSpacing="8dp"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:rowCount="3"
-                android:verticalSpacing="8dp">
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/filter_women"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:buttonTint="?attr/colorPrimary"
-                    android:text="@string/women"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/filter_people_of_colour"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:buttonTint="?attr/colorPrimary"
-                    android:text="@string/people_of_colour"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/filter_lgbt"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:buttonTint="?attr/colorPrimary"
-                    android:text="@string/lgbtq"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/filter_disabilities"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:buttonTint="?attr/colorPrimary"
-                    android:text="@string/disabilities"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/filter_religious_freedom"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:buttonTint="?attr/colorPrimary"
-                    android:text="@string/religious_freedom"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/filter_immigrants_refugees"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:buttonTint="?attr/colorPrimary"
-                    android:text="Immigrants"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/filter_transgender_non_binary"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:buttonTint="?attr/colorPrimary"
-                    android:text="Transgender/ENBY"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-            </GridLayout>
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        app:layout_constraintTop_toBottomOf="@id/filter_container">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/minimizeButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="Minimize"
-            android:textColor="?attr/colorOnPrimary"
-            app:iconGravity="textStart"
-            app:backgroundTint="?attr/colorPrimary" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/layerButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="16dp"
-            android:text="Map Layers"
-            android:textColor="?attr/colorOnPrimary"
-            android:textSize="14sp"
-            app:iconGravity="textStart"
-            app:backgroundTint="?attr/colorPrimary" />
-    </LinearLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/countryInfoContainer"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="80dp"
         android:layout_marginEnd="16dp"
         android:visibility="gone"
-        app:cardElevation="4dp"
-        app:cardCornerRadius="8dp"
         app:cardBackgroundColor="?attr/colorSurface"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filter_container">
+        app:layout_constraintStart_toStartOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Country Information"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:textColor="?attr/colorOnSurface"
-                android:padding="8dp"
-                android:background="@color/info_header_bg"/>
-
+            <!-- Filter Header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp">
+                android:layout_marginBottom="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-                <ScrollView
+                <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="2">
-
-                    <TextView
-                        android:id="@+id/safetyInfoTextView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Safety Information will be displayed here"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="14sp" />
-                </ScrollView>
-
-                <FrameLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp">
+                    android:text="Filter Safety Information"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-                    <ImageView
-                        android:id="@+id/flagImageView"
-                        android:layout_width="match_parent"
-                        android:layout_height="100dp"
-                        android:layout_gravity="center"
-                        android:background="@drawable/flag_background"
-                        android:contentDescription="Country Flag"
-                        android:scaleType="fitCenter" />
-                </FrameLayout>
+                <ImageButton
+                    android:id="@+id/closeFiltersButton"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Close Filters"
+                    android:src="@drawable/ic_close"
+                    app:tint="?attr/colorOnSurface" />
             </LinearLayout>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/filter_chip_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="8dp"
+                app:chipSpacingVertical="8dp"
+                app:singleLine="true"
+                app:singleSelection="false">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/filter_women"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/women" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/filterPeopleOfColour"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/people_of_colour" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/filterLgbt"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/lgbtq" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/filterDisabilities"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/disabilities" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/filterReligiousFreedom"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/religious_freedom" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/filterImmigrantsRefugees"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/immigrants_refugees" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/filterTransgenderNonBinary"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/transgender_non_binary" />
+            </com.google.android.material.chip.ChipGroup>
+
+            <!-- Apply Filters Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/applyFiltersButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:text="Apply Filters"
+                android:textAllCaps="false"
+                app:cornerRadius="28dp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- Map Fragment (Stretched to bottom) -->
+
+    <!-- Map Controls Section (Always in front of map) -->
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/map_fragment"
         android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="160dp"
+        android:layout_width="402dp"
+        android:layout_height="499dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/filter_container" />
+        app:layout_constraintTop_toBottomOf="@id/search_card"
+        app:layout_constraintVertical_bias="0.875" />
+
+    <LinearLayout
+        android:id="@+id/mapControlsLayout"
+        android:layout_width="34dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="4dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintHorizontal_bias="0.957">
+
+        <!-- Layers Button -->
+
+        <!-- Minimize Button -->
+    </LinearLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/countryInfoContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Drag Handle -->
+            <View
+                android:id="@+id/minimizeCountryInfoButton"
+                android:layout_width="40dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:background="#757575" />
+
+            <!-- Country Header with Flag -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:id="@+id/flagImageView"
+                    android:layout_width="48dp"
+                    android:layout_height="32dp"
+                    android:layout_marginEnd="16dp"
+                    android:contentDescription="Country Flag"
+                    android:scaleType="fitCenter"
+                    android:background="@drawable/flag_background" />
+
+                <TextView
+                    android:id="@+id/countryNameTextView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Country Name"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <ImageButton
+                    android:id="@+id/closeCountryInfoButton"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Close"
+                    android:src="@drawable/ic_close" />
+            </LinearLayout>
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E0E0E0" />
+
+            <!-- Safety Information with Applied Filters Tags -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Active Filters Chips -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:scrollbars="none">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/activeFiltersChipGroup"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleLine="true">
+                        <!-- Active filter chips will be added dynamically -->
+                    </com.google.android.material.chip.ChipGroup>
+                </HorizontalScrollView>
+
+                <!-- Safety Information -->
+                <TextView
+                    android:id="@+id/safetyInfoTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:lineSpacingExtra="6dp"
+                    android:minHeight="200dp"
+                    android:text="Safety Information will be displayed here"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/layerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="Map Layers"
+        app:fabSize="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.045"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.808"
+        app:srcCompat="@drawable/icons8_layer_50" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/minimizeButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="Reset"
+        app:fabSize="normal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.045"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.936"
+        app:srcCompat="@drawable/icons8_reset_50" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

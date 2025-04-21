@@ -1,15 +1,18 @@
+
 package com.example.journeypal.ui.storage
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.example.journeypal.R
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class FileAdapter(
     private val fileList: List<File>,
@@ -22,7 +25,8 @@ class FileAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FileViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_file, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_file, parent, false)
         return FileViewHolder(view)
     }
 
@@ -33,39 +37,37 @@ class FileAdapter(
     override fun getItemCount(): Int = fileList.size
 
     inner class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val fileNameTextView: TextView = itemView.findViewById(R.id.fileName)
-        private val deleteButton: Button = itemView.findViewById(R.id.deleteButton)
-        private val downloadButton: Button = itemView.findViewById(R.id.downloadButton)
-        private val filePreview: ImageView = itemView.findViewById(R.id.filePreview)
-        private val textPreview: TextView = itemView.findViewById(R.id.textPreview)
+        private val fileNameText: TextView = itemView.findViewById(R.id.fileName)
+        private val fileInfoText: TextView = itemView.findViewById(R.id.fileInfo)
+        private val fileTypeIcon: ImageView = itemView.findViewById(R.id.fileTypeIcon)
+        private val downloadButton: AppCompatImageButton = itemView.findViewById(R.id.downloadButton)
+        private val deleteButton: AppCompatImageButton = itemView.findViewById(R.id.deleteButton)
 
         fun bind(file: File) {
-            fileNameTextView.text = file.name
-            textPreview.visibility = View.GONE
-            filePreview.visibility = View.GONE
+            // Display original file name (without .enc extension)
+            val originalName = file.name.removeSuffix(".enc")
+            fileNameText.text = originalName
 
-            when {
-                file.extension == "txt" -> {
-                    textPreview.visibility = View.VISIBLE
-                    textPreview.text = readTextPreview(file)
-                }
-                file.extension in listOf("png", "jpg", "jpeg") -> {
-                    filePreview.visibility = View.VISIBLE
-                    Glide.with(itemView.context).load(file).into(filePreview)
-                }
-            }
+            // File metadata
+            val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+            val lastModified = dateFormat.format(Date(file.lastModified()))
+            val fileSize = formatFileSize(file.length())
+            fileInfoText.text = "$fileSize • $lastModified"
 
-            deleteButton.setOnClickListener { actionListener.onDelete(file) }
+
+
+            // Set up action buttons
             downloadButton.setOnClickListener { actionListener.onDownload(file) }
+            deleteButton.setOnClickListener { actionListener.onDelete(file) }
         }
 
-        private fun readTextPreview(file: File): String {
-            return try {
-                file.bufferedReader().useLines { lines ->
-                    lines.take(3).joinToString("\n")
-                }
-            } catch (e: Exception) {
-                "Error loading preview"
+
+
+        private fun formatFileSize(size: Long): String {
+            return when {
+                size < 1024 -> "$size B"
+                size < 1024 * 1024 -> "${size / 1024} KB"
+                else -> "${size / (1024 * 1024)} MB"
             }
         }
     }

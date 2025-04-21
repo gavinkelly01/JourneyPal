@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-
     <item
         android:id="@+id/navigation_home"
         android:icon="@drawable/home_app_logo_24px"
-        android:title="@string/title_home"/>
+        android:title="@string/title_home" />
 
     <item
         android:id="@+id/navigation_guide"
@@ -12,12 +11,17 @@
         android:title="@string/title_guide" />
 
     <item
-        android:id="@+id/navigation_storage"
-        android:icon="@drawable/folder_24px"
-        android:title="@string/storage" />
+        android:id="@+id/currency"
+        android:icon="@drawable/currency_logo"
+        android:title="@string/title_currency" />
 
     <item
-        android:id="@+id/navigation_camera"
-        android:icon="@drawable/photo_camera_24px"
-    android:title="@string/title_camera" />
+        android:id="@+id/translator"
+        android:icon="@drawable/translate_icon"
+        android:title="@string/title_translator" />
+
+    <item
+        android:id="@+id/navigation_more"
+        android:icon="@drawable/moreicon"
+        android:title="@string/title_more" />
 </menu>

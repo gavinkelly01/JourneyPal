@@ -4,6 +4,28 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="map_minimized_height">500dp</dimen>
     <dimen name="map_default_height">400dp</dimen>
+    <dimen name="card_corner_radius" />
+    <dimen name="card_elevation" />
+
+        <!-- Default Bottom Navigation height -->
+        <dimen name="bottom_nav_height">82dp</dimen>
+
+        <!-- Larger Bottom Navigation height for tablets -->
+        <dimen name="bottom_nav_height_tablet">96dp</dimen>
+
+
+        <dimen name="bottom_nav_icon_size">40dp</dimen>
+
+
+        <dimen name="bottom_nav_icon_size_tablet">20dp</dimen>
+
+
+        <dimen name="bottom_nav_icon_text_size">12sp</dimen>
+
+
+        <dimen name="bottom_nav_icon_text_size_tablet">16sp</dimen>
+    <dimen name="my_margin">16dp</dimen>
+    <dimen name="text_size">16sp</dimen>
 
 
 </resources>

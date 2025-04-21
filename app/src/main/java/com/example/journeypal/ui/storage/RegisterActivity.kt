@@ -2,7 +2,9 @@ package com.example.journeypal.ui.storage
 
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
-import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.util.Patterns
@@ -13,150 +15,153 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKeys
+import com.example.journeypal.MainActivity
 import com.example.journeypal.R
 import org.mindrot.jbcrypt.BCrypt
 
 class RegisterActivity : AppCompatActivity() {
 
-    // Registration views
+    // UI elements
     private lateinit var emailInput: EditText
     private lateinit var passwordInput: EditText
     private lateinit var registerButton: Button
-
-    // Login views
     private lateinit var loginEmailInput: EditText
     private lateinit var loginPasswordInput: EditText
     private lateinit var loginButton: Button
 
-    // Keys and preference name for secure storage
+    // Preference constants
     private val PREFERENCE_NAME = "secure_user_credentials"
     private val KEY_EMAIL = "secure_user_email"
     private val KEY_PASSWORD_HASH = "secure_user_password_hash"
 
-    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
-        // Initialize registration views
-        emailInput = findViewById(R.id.emailInput)
-        passwordInput = findViewById(R.id.passwordInput)
-        registerButton = findViewById(R.id.registerButton)
+        initViews()
 
-        // Initialize login views (initially hidden in the layout)
-        loginEmailInput = findViewById(R.id.emailInputLayout)
-        loginPasswordInput = findViewById(R.id.passwordInputLayout)
-        loginButton = findViewById(R.id.loginButton)
+        // Auto-login if credentials exist
+        if (areCredentialsStored()) {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+        }
 
         registerButton.setOnClickListener {
-            animateButton(registerButton)
+            animateButton(it as Button)
             handleRegistration()
         }
 
         loginButton.setOnClickListener {
-            animateButton(loginButton)
+            animateButton(it as Button)
             handleLogin()
         }
     }
 
-    /**
-     * Handles the registration process:
-     * - Validates email and password inputs.
-     * - Hashes the password with BCrypt.
-     * - Saves credentials in EncryptedSharedPreferences.
-     * - Transitions the UI from registration to login.
-     */
+    private fun initViews() {
+        emailInput = findViewById(R.id.emailInput)
+        passwordInput = findViewById(R.id.passwordInput)
+        registerButton = findViewById(R.id.registerButton)
+
+        loginEmailInput = findViewById(R.id.loginEmailInput)
+        loginPasswordInput = findViewById(R.id.loginPasswordInput)
+        loginButton = findViewById(R.id.loginButton)
+    }
+
     private fun handleRegistration() {
         val email = emailInput.text.toString().trim()
-        val password = passwordInput.text.toString().trim()
+        val password = passwordInput.text.toString()
 
         if (!isValidEmail(email)) {
-            Toast.makeText(this, "Invalid email format", Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (password.length < 8) {
-            Toast.makeText(this, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show()
+            emailInput.error = "Invalid email format"
+            emailInput.requestFocus()
             return
         }
 
-        // Hash the password with BCrypt using a stronger work factor (12)
+        if (password.length < 8) {
+            passwordInput.error = "Password must be at least 8 characters"
+            passwordInput.requestFocus()
+            return
+        }
+
         val passwordHash = BCrypt.hashpw(password, BCrypt.gensalt(12))
 
-        // Save credentials securely using EncryptedSharedPreferences
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        val securePreferences = EncryptedSharedPreferences.create(
-            PREFERENCE_NAME,
-            masterKeyAlias,
-            this,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-        )
+        try {
+            val securePrefs = getSecurePreferences()
+            with(securePrefs.edit()) {
+                putString(KEY_EMAIL, email)
+                putString(KEY_PASSWORD_HASH, passwordHash)
+                apply()
+            }
 
-        with(securePreferences.edit()) {
-            putString(KEY_EMAIL, email)
-            putString(KEY_PASSWORD_HASH, passwordHash)
-            apply()
+            Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show()
+            transitionToLogin()
+        } catch (e: Exception) {
+            Log.e("RegisterActivity", "Registration error", e)
+            Toast.makeText(this, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
-
-        Toast.makeText(this, "Registration successful!", Toast.LENGTH_SHORT).show()
-        Log.d("RegisterActivity", "User registered: $email")
-
-        // Transition the UI from registration fields to login fields.
-        transitionToLogin()
     }
 
-    /**
-     * Handles the login process:
-     * - Validates input.
-     * - Retrieves stored credentials.
-     * - Verifies credentials using BCrypt.
-     * - Notifies the user upon success or failure.
-     */
     private fun handleLogin() {
-        val loginEmail = loginEmailInput.text.toString().trim()
-        val loginPassword = loginPasswordInput.text.toString().trim()
+        val email = loginEmailInput.text.toString().trim()
+        val password = loginPasswordInput.text.toString()
 
-        if (loginEmail.isEmpty() || loginPassword.isEmpty()) {
-            Toast.makeText(this, "Email and password cannot be empty", Toast.LENGTH_SHORT).show()
+        if (email.isEmpty() || password.isEmpty()) {
+            Toast.makeText(this, "Email and password required", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
-        val securePreferences = EncryptedSharedPreferences.create(
+        try {
+            val securePrefs = getSecurePreferences()
+            val storedEmail = securePrefs.getString(KEY_EMAIL, null)
+            val storedPasswordHash = securePrefs.getString(KEY_PASSWORD_HASH, null)
+
+            if (email != storedEmail) {
+                Toast.makeText(this, "Incorrect email", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            if (!BCrypt.checkpw(password, storedPasswordHash)) {
+                Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+
+        } catch (e: Exception) {
+            Log.e("RegisterActivity", "Login error", e)
+            Toast.makeText(this, "Login failed: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun getSecurePreferences(): SharedPreferences {
+        val masterKey = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+        return EncryptedSharedPreferences.create(
             PREFERENCE_NAME,
-            masterKeyAlias,
+            masterKey,
             this,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
-
-        val storedEmail = securePreferences.getString(KEY_EMAIL, null)
-        val storedPasswordHash = securePreferences.getString(KEY_PASSWORD_HASH, null)
-
-        if (storedEmail == null || storedPasswordHash == null) {
-            Toast.makeText(this, "No registered user found. Please register first.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (loginEmail != storedEmail) {
-            Toast.makeText(this, "Incorrect email", Toast.LENGTH_SHORT).show()
-            return
-        }
-        if (!BCrypt.checkpw(loginPassword, storedPasswordHash)) {
-            Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show()
-        // TODO: Navigate to the main part of your app (e.g., startActivity(Intent(this, MainActivity::class.java)))
     }
 
-    // Helper method to validate email format.
+
+    private fun areCredentialsStored(): Boolean {
+        return try {
+            val prefs = getSecurePreferences()
+            val email = prefs.getString(KEY_EMAIL, null)
+            val hash = prefs.getString(KEY_PASSWORD_HASH, null)
+            !email.isNullOrEmpty() && !hash.isNullOrEmpty()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     private fun isValidEmail(email: String): Boolean {
         return Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
-    // Button click animation for visual feedback.
     private fun animateButton(button: Button) {
         val scaleX = PropertyValuesHolder.ofFloat("scaleX", 1f, 1.1f, 1f)
         val scaleY = PropertyValuesHolder.ofFloat("scaleY", 1f, 1.1f, 1f)
@@ -166,24 +171,29 @@ class RegisterActivity : AppCompatActivity() {
         }
     }
 
-    // Transitions the UI by fading out the registration views and fading in the login views.
     private fun transitionToLogin() {
-        // Fade out registration views.
-        emailInput.animate().alpha(0f).setDuration(500).withEndAction { emailInput.visibility = View.GONE }
-        passwordInput.animate().alpha(0f).setDuration(500).withEndAction { passwordInput.visibility = View.GONE }
-        registerButton.animate().alpha(0f).setDuration(500).withEndAction { registerButton.visibility = View.GONE }
+        // Hide registration views
+        emailInput.animate().alpha(0f).setDuration(300).withEndAction {
+            emailInput.visibility = View.GONE
+        }
+        passwordInput.animate().alpha(0f).setDuration(300).withEndAction {
+            passwordInput.visibility = View.GONE
+        }
+        registerButton.animate().alpha(0f).setDuration(300).withEndAction {
+            registerButton.visibility = View.GONE
+        }
 
-        // Fade in login views.
+        // Show login views
         loginEmailInput.visibility = View.VISIBLE
-        loginEmailInput.alpha = 0f
-        loginEmailInput.animate().alpha(1f).setDuration(500).start()
-
         loginPasswordInput.visibility = View.VISIBLE
-        loginPasswordInput.alpha = 0f
-        loginPasswordInput.animate().alpha(1f).setDuration(500).start()
-
         loginButton.visibility = View.VISIBLE
+
+        loginEmailInput.alpha = 0f
+        loginPasswordInput.alpha = 0f
         loginButton.alpha = 0f
-        loginButton.animate().alpha(1f).setDuration(500).start()
+
+        loginEmailInput.animate().alpha(1f).setDuration(300).start()
+        loginPasswordInput.animate().alpha(1f).setDuration(300).start()
+        loginButton.animate().alpha(1f).setDuration(300).start()
     }
 }

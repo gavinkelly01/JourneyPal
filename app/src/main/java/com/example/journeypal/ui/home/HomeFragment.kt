@@ -1,17 +1,22 @@
 package com.example.journeypal.ui.home
 
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.journeypal.R
 import com.example.journeypal.databinding.FragmentHomeBinding
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -21,6 +26,13 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.TileOverlay
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.model.RectangularBounds
+import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
+import com.google.android.libraries.places.api.net.PlacesClient
+import com.google.android.material.chip.Chip
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -29,14 +41,20 @@ import java.util.Locale
 
 class HomeFragment : Fragment(), OnMapReadyCallback {
 
+    private lateinit var placesClient: PlacesClient
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private lateinit var googleMap: GoogleMap
     private var currentMarker: Marker? = null
-    private val filters = mutableMapOf<String, CheckBox>()
+    private val filterChips = mutableMapOf<String, Chip>()
     private val defaultLatLng = LatLng(0.0, 0.0)
     private val defaultZoom = 2.0f
-    private var selectedCountryName = ""
+    private var isCountryInfoMinimized = true
+    private var originalMapParams: ConstraintLayout.LayoutParams? = null
+    private var heatmapOverlay: TileOverlay? = null
+    private var isHeatmapVisible = false
+    private val countryDataCache = mutableMapOf<String, JSONObject>()
+    private var allCountriesData: JSONObject? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -49,70 +67,162 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Initialize filters
-        filters["women"] = binding.filterWomen
-        filters["people_of_color"] = binding.filterPeopleOfColour
-        filters["LGBTQ"] = binding.filterLgbt
-        filters["disabilities"] = binding.filterDisabilities
-        filters["religious_freedom"] = binding.filterReligiousFreedom
-        filters["immigrants_refugees"] = binding.filterImmigrantsRefugees
-        filters["transgender_non_binary"] = binding.filterTransgenderNonBinary
-
-        // Initialize map
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.map_fragment) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
-        // Initialize UI elements
+        if (!Places.isInitialized()) {
+            Places.initialize(requireContext(), "google_maps_key")
+        }
+        placesClient = Places.createClient(requireContext())
+        originalMapParams = binding.mapFragment.layoutParams as? ConstraintLayout.LayoutParams
+        setupFilterChips()
         setupSearchView()
-        setupButtons()
-        setupFilterChangeListeners()
+        setupClickListeners()
+    }
 
-        // Initially hide the info containers
-        binding.countryInfoContainer.visibility = View.GONE
+    private fun setupFilterChips() {
+        val chipMap = mapOf(
+            "women" to binding.filterWomen,
+            "people_of_color" to binding.filterPeopleOfColour,
+            "LGBTQ" to binding.filterLgbt,
+            "disabilities" to binding.filterDisabilities,
+            "religious_freedom" to binding.filterReligiousFreedom,
+            "immigrants_refugees" to binding.filterImmigrantsRefugees,
+            "transgender_non_binary" to binding.filterTransgenderNonBinary
+        )
+
+        chipMap.forEach { (key, chip) ->
+            filterChips[key] = chip
+            chip.apply {
+                isCheckable = true
+                setOnCheckedChangeListener { _, isChecked ->
+                    val status = if (isChecked) "selected" else "deselected"
+                    Log.d("ChipSelected", "$text $status")
+                }
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun searchForLGBTQPlaces() {
+        if (!hasLocationPermission()) {
+            requestLocationPermission()
+            return
+        }
+
+        if ("LGBTQ" !in getSelectedFilters()) return
+
+        val latLng = googleMap.cameraPosition.target
+        val bounds = createBounds(latLng, 0.09)
+        val placesRequest = FindCurrentPlaceRequest.newInstance(listOf(Place.Field.NAME, Place.Field.LAT_LNG))
+
+        placesClient.findCurrentPlace(placesRequest)
+            .addOnSuccessListener { response ->
+                response.placeLikelihoods
+                    .filter { it.place.name.contains("LGBTQ", true) }
+                    .forEach { place ->
+                        place.place.latLng?.let {
+                            googleMap.addMarker(MarkerOptions().position(it).title(place.place.name))
+                        }
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("PlacesAPIError", "Error fetching places: ${e.message}")
+            }
+    }
+
+    private fun hasLocationPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestLocationPermission() {
+        ActivityCompat.requestPermissions(
+            requireActivity(),
+            arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+            LOCATION_PERMISSION_REQUEST_CODE
+        )
+    }
+
+    private fun createBounds(center: LatLng, delta: Double): RectangularBounds {
+        return RectangularBounds.newInstance(
+            LatLng(center.latitude - delta, center.longitude - delta),
+            LatLng(center.latitude + delta, center.longitude + delta)
+        )
+    }
+
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            LOCATION_PERMISSION_REQUEST_CODE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    searchForLGBTQPlaces()
+                } else {
+                    Toast.makeText(requireContext(), "Location permission is required to fetch places.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    companion object {
+        const val LOCATION_PERMISSION_REQUEST_CODE = 1
     }
 
     private fun setupSearchView() {
-        binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                query?.let { searchCountry(it) }
-                return true
+        binding.searchView.setOnEditorActionListener { textView, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                val query = textView.text.toString()
+                if (query.isNotEmpty()) {
+                    searchCountry(query)
+                }
+                true
+            } else {
+                false
             }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                return false
-            }
-        })
+        }
     }
 
-    private fun setupButtons() {
-        binding.minimizeButton.setOnClickListener {
+    private fun setupClickListeners() {
+        binding.minimizeCountryInfoButton.setOnClickListener {
+            toggleCountryInfoContainer()
+        }
+
+        binding.closeCountryInfoButton.setOnClickListener {
+            toggleCountryInfoContainer()
+        }
+
+        binding.filterButton.setOnClickListener {
             animateButtonClick(it) { toggleFilters() }
         }
-        binding.resetMapButton.setOnClickListener {
-            animateButtonClick(it) { resetMapToDefault() }
-        }
-        binding.layerButton.setOnClickListener {
-            animateButtonClick(it) { showLayerSelectionDialog() }
-        }
-    }
 
-    private fun setupFilterChangeListeners() {
-        // Add listeners to filter checkboxes to update info when filters change
-        filters.values.forEach { checkBox ->
-            checkBox.setOnCheckedChangeListener { _, _ ->
-                if (selectedCountryName.isNotEmpty() && selectedCountryName != "Unknown") {
-                    val selectedFilters = getSelectedFilters()
-                    if (selectedFilters.isNotEmpty()) {
-                        currentMarker?.position?.let { position ->
-                            showSafetyInfo(position, selectedFilters)
-                        }
-                    } else {
-                        binding.countryInfoContainer.visibility = View.GONE
-                        Toast.makeText(requireContext(), "Please select at least one filter", Toast.LENGTH_SHORT).show()
-                    }
+        binding.closeFiltersButton?.setOnClickListener {
+            animateButtonClick(it) { toggleFilters() }
+        }
+
+        binding.applyFiltersButton?.setOnClickListener {
+            animateButtonClick(it) {
+                applyFilters()
+                toggleFilters()
+            }
+        }
+
+        binding.minimizeButton.setOnClickListener {
+            animateButtonClick(it) {
+                if (binding.countryInfoContainer.visibility == View.VISIBLE) {
+                    toggleCountryInfoContainer()
+                } else {
+                    toggleFilters()
                 }
+            }
+        }
+
+
+        binding.layerButton.setOnClickListener {
+            animateButtonClick(it) {
+                showLayerSelectionDialog()
             }
         }
     }
@@ -135,17 +245,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
 
     private fun toggleFilters() {
         if (binding.filterContainer.visibility == View.VISIBLE) {
+            // Hide filter container
             binding.filterContainer.animate()
                 .translationY(-binding.filterContainer.height.toFloat())
                 .alpha(0f)
                 .setDuration(300)
                 .withEndAction {
                     binding.filterContainer.visibility = View.GONE
-                    binding.minimizeButton.text = "Expand Filters"
-                    val params = binding.mapFragment.layoutParams as ConstraintLayout.LayoutParams
-                    params.height = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-                    params.topToBottom = R.id.searchView
-                    binding.mapFragment.layoutParams = params
                 }
                 .start()
         } else {
@@ -157,22 +263,39 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 .alpha(1f)
                 .setDuration(300)
                 .start()
-
-            binding.minimizeButton.text = "Minimize"
-            val params = binding.mapFragment.layoutParams as ConstraintLayout.LayoutParams
-            params.height = resources.getDimensionPixelSize(R.dimen.map_default_height)
-            params.topToBottom = R.id.filter_container
-            binding.mapFragment.layoutParams = params
         }
+    }
+
+
+    private fun applyFilters() {
+        val selectedFilters = getSelectedFilters()
+        if (selectedFilters.isEmpty()) {
+            Toast.makeText(requireContext(), "Please select at least one filter", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        toggleFilters()
+            currentMarker?.let { marker ->
+                showSafetyInfo(marker.position, selectedFilters)
+            } ?: run {
+                Toast.makeText(requireContext(), "Select a location on the map to view safety information", Toast.LENGTH_SHORT).show()
+            }
+
     }
 
     private fun resetMapToDefault() {
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, defaultZoom), 1000, null)
-        filters.values.forEach { it.isChecked = false }
-        binding.countryInfoContainer.visibility = View.GONE
-        selectedCountryName = ""
+        filterChips.values.forEach { it.isChecked = false }
+        if (binding.countryInfoContainer.visibility == View.VISIBLE) {
+            toggleCountryInfoContainer()
+        }
+
         currentMarker?.remove()
         currentMarker = null
+
+        if (binding.filterContainer.visibility == View.VISIBLE) {
+            toggleFilters()
+        }
     }
 
     private fun showLayerSelectionDialog() {
@@ -209,12 +332,24 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         googleMap = map
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, defaultZoom))
         googleMap.uiSettings.isZoomControlsEnabled = true
+
         googleMap.setOnMapClickListener { latLng ->
+            if (isHeatmapVisible) {
+                Toast.makeText(requireContext(), "Disable heatmap to select individual countries", Toast.LENGTH_SHORT).show()
+                return@setOnMapClickListener
+            }
+
             val selectedFilters = getSelectedFilters()
             if (selectedFilters.isNotEmpty()) {
+                if (binding.countryInfoContainer.visibility != View.VISIBLE) {
+                    toggleCountryInfoContainer()
+                }
                 showSafetyInfo(latLng, selectedFilters)
             } else {
                 Toast.makeText(requireContext(), "Please select at least one filter", Toast.LENGTH_SHORT).show()
+                if (binding.filterContainer.visibility != View.VISIBLE) {
+                    toggleFilters()
+                }
             }
         }
     }
@@ -224,42 +359,45 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         try {
             val addresses = geocoder.getFromLocationName(query, 1)
             if (!addresses.isNullOrEmpty()) {
-                val latLng = LatLng(addresses[0].latitude, addresses[0].longitude)
-                googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 10f))
+                val address = addresses[0]
+                if (address != null) {
+                    val latLng = LatLng(address.latitude, address.longitude)
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 5f))
 
-                val selectedFilters = getSelectedFilters()
-                if (selectedFilters.isNotEmpty()) {
-                    showSafetyInfo(latLng, selectedFilters)
-                } else {
-                    Toast.makeText(requireContext(), "Please select at least one filter", Toast.LENGTH_SHORT).show()
+                    val selectedFilters = getSelectedFilters()
+                    if (selectedFilters.isNotEmpty()) {
+                        if (binding.countryInfoContainer.visibility != View.VISIBLE) {
+                            toggleCountryInfoContainer()
+                        }
+                        showSafetyInfo(latLng, selectedFilters)
+                    } else {
+                        Toast.makeText(requireContext(), "Please select at least one filter", Toast.LENGTH_SHORT).show()
+                        // Show filter container if it's not visible
+                        if (binding.filterContainer.visibility != View.VISIBLE) {
+                            toggleFilters()
+                        }
+                    }
                 }
             } else {
                 Toast.makeText(requireContext(), "Country not found", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
-            Toast.makeText(requireContext(), "Error searching for country", Toast.LENGTH_SHORT).show()
+            Log.e("SearchError", "Error searching for country", e)
+            Toast.makeText(requireContext(), "Error searching for country: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun getSelectedFilters(): List<String> {
-        return filters.filter { it.value.isChecked }.map { it.key }
+        return filterChips.filter { it.value.isChecked }.map { it.key }
     }
 
     private fun showSafetyInfo(latLng: LatLng, filters: List<String>) {
         lifecycleScope.launch {
             val countryName = getCountryNameFromLatLng(latLng)
-            selectedCountryName = countryName
-
             if (countryName != "Unknown") {
-                // Show loading indicator
-                binding.safetyInfoTextView.text = "Loading safety information for $countryName..."
-                binding.countryInfoContainer.visibility = View.VISIBLE
-                binding.flagImageView.visibility = View.GONE
-
                 fetchCountryData(countryName, filters, latLng)
             } else {
-                Toast.makeText(requireContext(), "Country not found", Toast.LENGTH_SHORT).show()
-                binding.countryInfoContainer.visibility = View.GONE
+                Toast.makeText(requireContext(), "Country not found at this location", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -270,9 +408,12 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             return
         }
 
+        binding.safetyInfoTextView.text = "Loading safety information for $countryName..."
+
         val client = OkHttpClient()
+        val encodedCountryName = countryName.replace(" ", "%20") // URL encode the country name
         val request = Request.Builder()
-            .url("https://safetyratingapi.onrender.com/api/safety-ratings/$countryName")
+            .url("https://safetyratingapi.onrender.com/api/safety-ratings/$encodedCountryName")
             .build()
 
         Thread {
@@ -288,57 +429,59 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                         }
                     } else {
                         requireActivity().runOnUiThread {
-                            binding.safetyInfoTextView.text = "Failed to fetch data for $countryName"
-                            binding.countryInfoContainer.visibility = View.VISIBLE
-                            binding.flagImageView.visibility = View.GONE
-                            Toast.makeText(requireContext(), "Failed to fetch data", Toast.LENGTH_SHORT).show()
+                            val errorMsg = "Failed to fetch data: ${response.code} ${response.message}"
+                            Log.e("API_ERROR", errorMsg)
+                            showError(errorMsg)
                         }
                     }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                Log.e("API_ERROR", "Exception: ${e.message}")
                 requireActivity().runOnUiThread {
-                    binding.safetyInfoTextView.text = "Error: ${e.message}"
-                    binding.countryInfoContainer.visibility = View.VISIBLE
-                    binding.flagImageView.visibility = View.GONE
-                    Toast.makeText(requireContext(), "Error occurred: ${e.message}", Toast.LENGTH_SHORT).show()
+                    showError("Error occurred: ${e.message}")
                 }
             }
         }.start()
     }
 
     private fun displaySafetyInfo(
-        jsonResponse: JSONObject,
+        jsonResponse: JSONObject?,
         filters: List<String>,
         latLng: LatLng,
         countryName: String
     ) {
+        if (jsonResponse == null) {
+            showError("Failed to retrieve data. Please check your internet connection.")
+            return
+        }
+
+        binding.countryNameTextView.text = countryName
+
         val infoBuilder = StringBuilder("Safety Information for $countryName:\n")
         val ratings = jsonResponse.optJSONObject("ratings")?.optJSONObject("ratings")
-        Log.d("RATINGS_OBJECT", "Ratings: ${ratings.toString()}")
 
         if (ratings != null) {
             filters.forEach { filter ->
                 val safetyInfo = ratings.optDouble(filter, -1.0)
-                if (safetyInfo != -1.0) {
-                    infoBuilder.append("\n${formatFilterName(filter)}: $safetyInfo")
-                } else {
-                    infoBuilder.append("\n${formatFilterName(filter)}: No data available")
-                }
+                infoBuilder.append(
+                    "\n${filter.replaceFirstChar { it.uppercase(Locale.ROOT) }}: " +
+                            if (safetyInfo != -1.0) safetyInfo.toString() else "No data available"
+                )
             }
         } else {
             infoBuilder.append("\nRatings data not available for $countryName.")
         }
 
         val countryData = jsonResponse.optJSONObject("ratings")
-        val capital = countryData?.optString("capital", "No data")
+        val capital = countryData?.optString("capital", "No data") ?: "No data"
         val population = countryData?.optInt("population", -1)
-        val region = countryData?.optString("region", "No data")
+        val region = countryData?.optString("region", "No data") ?: "No data"
         val language = countryData?.optJSONArray("language")?.join(", ") ?: "No data"
-        val flagUrl = countryData?.optString("flag_url", "No data")
-        val currency = countryData?.optString("currency", "No data")
-        val timeZone = countryData?.optString("time_zone", "No data")
-        val tld = countryData?.optString("tld", "No data")
+        val flagUrl = countryData?.optString("flag_url", "No data") ?: "No data"
+        val currency = countryData?.optString("currency", "No data") ?: "No data"
+        val timeZone = countryData?.optString("time_zone", "No data") ?: "No data"
+        val tld = countryData?.optString("tld", "No data") ?: "No data"
         val humanDevelopmentIndex = countryData?.optDouble("humandevelopmentindex", -1.0)
 
         infoBuilder.append("\n\nOther Information:")
@@ -351,44 +494,81 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             .append("\nCountry Domain (TLD): $tld")
             .append("\nHuman Development Index: ${if (humanDevelopmentIndex != -1.0) humanDevelopmentIndex else "No data"}")
 
+        binding.activeFiltersChipGroup.removeAllViews()
+        filters.forEach { filter ->
+            val chip = Chip(requireContext())
+            chip.text = filter.replaceFirstChar { it.uppercase(Locale.ROOT) }
+            chip.isCheckable = false
+            binding.activeFiltersChipGroup.addView(chip)
+        }
+
         requireActivity().runOnUiThread {
-            // Set the text content to the TextView
-            binding.safetyInfoTextView.text = infoBuilder.toString()
+            binding.safetyInfoTextView.apply {
+                alpha = 0f
+                visibility = View.VISIBLE
+                text = infoBuilder.toString()
+                scrollTo(0, 0) // Scroll to the top to ensure the text is visible
+                animate().alpha(1f).setDuration(300).start()
+            }
 
-            // Make sure the container is visible
-            binding.countryInfoContainer.visibility = View.VISIBLE
-            binding.countryInfoContainer.alpha = 1f
-
-            // Handle flag image
             if (flagUrl != "No data") {
-                binding.flagImageView.visibility = View.VISIBLE
-                Glide.with(requireContext())
-                    .load(flagUrl)
-                    .placeholder(R.drawable.flag_background) // Add a placeholder drawable
-                    .error(R.drawable.flag_background) // Add an error drawable
-                    .into(binding.flagImageView)
+                binding.flagImageView.apply {
+                    alpha = 0f
+                    visibility = View.VISIBLE
+                    Glide.with(requireContext())
+                        .load(flagUrl)
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .error(R.drawable.flag_background)
+                        .into(this)
+                    animate().alpha(1f).setDuration(300).start()
+                }
             } else {
                 binding.flagImageView.visibility = View.GONE
             }
 
-            // Update or add marker
             currentMarker?.remove()
             currentMarker = googleMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
                     .title(countryName)
             )
+            currentMarker?.showInfoWindow()
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 5f), 1000, null)
         }
     }
 
-    private fun formatFilterName(filter: String): String {
-        return filter.replace("_", " ").split(" ")
-            .joinToString(" ") { word ->
-                word.replaceFirstChar { char ->
-                    if (char.isLowerCase()) char.titlecase(Locale.getDefault()) else char.toString()
-                }
+    private fun showError(message: String) {
+        requireActivity().runOnUiThread {
+            binding.safetyInfoTextView.apply {
+                alpha = 0f
+                visibility = View.VISIBLE
+                text = message
+                scrollTo(0, 0) // Scroll to the top for error messages
+                animate().alpha(1f).setDuration(300).start()
             }
+            binding.flagImageView.visibility = View.GONE
+        }
+    }
+
+    private fun toggleCountryInfoContainer() {
+        val countryInfoContainer = binding.countryInfoContainer
+
+        if (countryInfoContainer.visibility != View.VISIBLE) {
+            countryInfoContainer.visibility = View.VISIBLE
+            countryInfoContainer.alpha = 0f
+            countryInfoContainer.animate()
+                .alpha(1f)
+                .setDuration(300)
+                .start()
+        } else {
+            countryInfoContainer.animate()
+                .alpha(0f)
+                .setDuration(300)
+                .withEndAction {
+                    countryInfoContainer.visibility = View.GONE
+                }
+                .start()
+        }
     }
 
     @Suppress("DEPRECATION")
@@ -396,12 +576,13 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         val geocoder = Geocoder(requireContext())
         return try {
             val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
-            if (!addresses.isNullOrEmpty()) {
+            if (!addresses.isNullOrEmpty() && addresses[0] != null) {
                 addresses[0]?.countryName ?: "Unknown"
             } else {
                 "Unknown"
             }
         } catch (e: Exception) {
+            Log.e("GeocoderError", "Error getting country name", e)
             "Unknown"
         }
     }
