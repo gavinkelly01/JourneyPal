@@ -4,9 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
-import android.speech.SpeechRecognizer
 import android.view.*
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,12 +30,10 @@ import java.util.concurrent.TimeUnit
 class TranslatorFragment : Fragment() {
 
     private var _binding: FragmentTranslatorBinding? = null
-    private val binding get() = _binding!!
+    val binding get() = _binding!!
 
     private lateinit var cameraExecutor: ExecutorService
     private lateinit var textRecognizer: TextRecognizer
-    private var speechRecognizer: SpeechRecognizer? = null
-    private var recognitionListener: RecognitionListener? = null
 
     private var sourceLanguage = "EN"
     private var targetLanguage = "ES"
@@ -50,7 +45,6 @@ class TranslatorFragment : Fragment() {
         val granted = permissions.entries.all { it.value }
         if (granted) {
             when (translationMode) {
-                TranslationMode.VOICE -> setupVoiceRecognition()
                 TranslationMode.CAMERA -> startCameraPreview()
                 else -> {}
             }
@@ -59,7 +53,7 @@ class TranslatorFragment : Fragment() {
         }
     }
 
-    enum class TranslationMode { TEXT, VOICE, CAMERA }
+    enum class TranslationMode { TEXT, CAMERA }
 
     companion object {
         private const val DEEPL_API_KEY = "3f7b78e8-7d12-46db-a4a5-c72bd4f68d33:fx"
@@ -81,12 +75,6 @@ class TranslatorFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         cameraExecutor = Executors.newSingleThreadExecutor()
-
-        if (SpeechRecognizer.isRecognitionAvailable(requireContext())) {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(requireContext())
-        } else {
-            Toast.makeText(requireContext(), "Speech recognition not available", Toast.LENGTH_SHORT).show()
-        }
 
         setupLanguageSpinners()
         setupModeSwitching()
@@ -125,11 +113,6 @@ class TranslatorFragment : Fragment() {
             setTranslationMode(TranslationMode.TEXT)
         }
 
-        binding.voiceModeButton.setOnClickListener {
-            setTranslationMode(TranslationMode.VOICE)
-            checkAndRequestVoicePermissions()
-        }
-
         binding.cameraModeButton.setOnClickListener {
             setTranslationMode(TranslationMode.CAMERA)
             checkAndRequestCameraPermissions()
@@ -155,28 +138,11 @@ class TranslatorFragment : Fragment() {
                 if (input.isNotEmpty()) translateText(input)
             }
         }
-
-        binding.translateButton.setOnTouchListener { v, event ->
-            if (translationMode == TranslationMode.VOICE) {
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> {
-                        startVoiceRecognition()
-                        v.isPressed = true
-                    }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                        stopVoiceRecognition()
-                        v.isPressed = false
-                    }
-                }
-            }
-            true
-        }
     }
 
-    private fun setTranslationMode(mode: TranslationMode) {
+    fun setTranslationMode(mode: TranslationMode) {
         translationMode = mode
         binding.sourceTextLayout.visibility = View.GONE
-        binding.voiceInstructions.visibility = View.GONE
         binding.cameraPreviewView.visibility = View.GONE
         binding.translateButton.visibility = View.VISIBLE
 
@@ -185,18 +151,12 @@ class TranslatorFragment : Fragment() {
         val defaultColor = ContextCompat.getColor(context, android.R.color.darker_gray)
 
         binding.textModeButton.setBackgroundColor(if (mode == TranslationMode.TEXT) selectedColor else defaultColor)
-        binding.voiceModeButton.setBackgroundColor(if (mode == TranslationMode.VOICE) selectedColor else defaultColor)
         binding.cameraModeButton.setBackgroundColor(if (mode == TranslationMode.CAMERA) selectedColor else defaultColor)
 
         when (mode) {
             TranslationMode.TEXT -> {
                 binding.sourceTextLayout.visibility = View.VISIBLE
                 binding.translateButton.text = "Translate Text"
-            }
-            TranslationMode.VOICE -> {
-                binding.voiceInstructions.visibility = View.VISIBLE
-                binding.translateButton.text = "Hold to Speak"
-                binding.voiceInstructions.text = "Press and hold to speak, release to translate"
             }
             TranslationMode.CAMERA -> {
                 binding.cameraPreviewView.visibility = View.VISIBLE
@@ -255,96 +215,6 @@ class TranslatorFragment : Fragment() {
         }
     }
 
-    private fun setupVoiceRecognition() {
-        if (speechRecognizer == null) {
-            Toast.makeText(requireContext(), "Speech recognition not available", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (recognitionListener == null) {
-            recognitionListener = object : RecognitionListener {
-                override fun onReadyForSpeech(params: Bundle?) {
-                    binding.voiceInstructions.text = "Speak now..."
-                }
-
-                override fun onBeginningOfSpeech() {
-                    binding.voiceInstructions.text = "Listening..."
-                }
-
-                override fun onEndOfSpeech() {
-                    binding.voiceInstructions.text = "Processing speech..."
-                }
-
-                override fun onResults(results: Bundle?) {
-                    processVoiceResults(results)
-                }
-
-                override fun onPartialResults(partialResults: Bundle?) {
-                    val partialText = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-                    if (!partialText.isNullOrEmpty()) {
-                        binding.voiceInstructions.text = "Hearing: $partialText"
-                    }
-                }
-
-                override fun onError(error: Int) {
-                    binding.progressBar.visibility = View.GONE
-                    val errorMessage = when (error) {
-                        SpeechRecognizer.ERROR_AUDIO -> "Audio error"
-                        SpeechRecognizer.ERROR_NO_MATCH -> "No match found"
-                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Speech timeout"
-                        else -> "Error code: $error"
-                    }
-                    binding.voiceInstructions.text = "Voice error: $errorMessage"
-                }
-
-                override fun onRmsChanged(rmsdB: Float) {}
-                override fun onBufferReceived(buffer: ByteArray?) {}
-                override fun onEvent(eventType: Int, params: Bundle?) {}
-            }
-        }
-
-        speechRecognizer?.setRecognitionListener(recognitionListener)
-    }
-
-    private fun startVoiceRecognition() {
-        if (speechRecognizer == null) return
-
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE, getLocaleFromLanguageCode(sourceLanguage).toString())
-            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-        }
-
-        binding.progressBar.visibility = View.VISIBLE
-        binding.translatedTextView.text = ""
-        speechRecognizer?.startListening(intent)
-    }
-
-    private fun stopVoiceRecognition() {
-        speechRecognizer?.stopListening()
-    }
-
-    private fun processVoiceResults(results: Bundle?) {
-        val spokenText = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
-        binding.progressBar.visibility = View.GONE
-        if (!spokenText.isNullOrEmpty()) {
-            binding.sourceTextEditText.setText(spokenText)
-            binding.voiceInstructions.text = "Recognized: $spokenText"
-            translateText(spokenText)
-        } else {
-            binding.voiceInstructions.text = "No speech recognized"
-        }
-    }
-
-    private fun checkAndRequestVoicePermissions() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO)
-            == PackageManager.PERMISSION_GRANTED) {
-            setupVoiceRecognition()
-        } else {
-            requestPermissionLauncher.launch(arrayOf(Manifest.permission.RECORD_AUDIO))
-        }
-    }
-
     private fun checkAndRequestCameraPermissions() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
             == PackageManager.PERMISSION_GRANTED) {
@@ -397,24 +267,9 @@ class TranslatorFragment : Fragment() {
         }
     }
 
-    private fun getLocaleFromLanguageCode(code: String): Locale = when (code) {
-        "EN" -> Locale.ENGLISH
-        "ES" -> Locale("es")
-        "FR" -> Locale("fr")
-        "DE" -> Locale("de")
-        "IT" -> Locale("it")
-        "JA" -> Locale("ja")
-        "KO" -> Locale("ko")
-        "ZH" -> Locale.SIMPLIFIED_CHINESE
-        "RU" -> Locale("ru")
-        "AR" -> Locale("ar")
-        else -> Locale.ENGLISH
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
         cameraExecutor.shutdown()
-        speechRecognizer?.destroy()
     }
 }

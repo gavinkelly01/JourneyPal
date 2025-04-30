@@ -27,6 +27,7 @@ class MoreFragment : Fragment() {
             MoreMenuItem(R.drawable.photo_camera_24px, getString(R.string.title_camera), R.id.navigation_camera),
             MoreMenuItem(R.drawable.emergency_icon, getString(R.string.title_emergency), R.id.emergency_sos),
             MoreMenuItem(R.drawable.alertsicon, getString(R.string.title_livealerts), R.id.livealerts),
+            MoreMenuItem(R.drawable.weather_icon, getString(R.string.title_weather), R.id.WeatherFragment),
         )
 
         val adapter = MoreMenuAdapter(moreItems) { menuItem ->

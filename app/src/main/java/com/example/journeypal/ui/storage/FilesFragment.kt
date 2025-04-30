@@ -64,17 +64,11 @@ class FilesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupToolbar()
         setupRecyclerView()
-
         binding.uploadButton.setOnClickListener { openFilePicker() }
         binding.logoutButton.setOnClickListener { logoutUser() }
-
-        // Ensure encryption key exists
         generateEncryptionKey()
-
-        // Load user's files
         loadUserFiles()
     }
 
@@ -83,8 +77,6 @@ class FilesFragment : Fragment() {
             title = "Secure Files"
             setDisplayHomeAsUpEnabled(true)
         }
-
-        // Display user email in subtitle
         binding.userEmailText.text = currentUserEmail ?: "Unknown User"
     }
 
@@ -93,7 +85,6 @@ class FilesFragment : Fragment() {
             override fun onDelete(file: File) = deleteFile(file)
             override fun onDownload(file: File) = decryptAndSaveFile(file)
         })
-
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = fileAdapter
@@ -112,19 +103,12 @@ class FilesFragment : Fragment() {
         try {
             val inputStream = requireContext().contentResolver.openInputStream(uri)
             val fileName = getFileNameFromUri(uri) ?: "file_${System.currentTimeMillis()}"
-
-            // Create a temporary file
             val tempFile = File(requireContext().cacheDir, fileName)
             FileOutputStream(tempFile).use { output ->
                 inputStream?.copyTo(output)
             }
-
-            // Encrypt and save the file
             encryptAndSaveFile(tempFile)
-
-            // Delete the temporary file
             tempFile.delete()
-
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -146,7 +130,6 @@ class FilesFragment : Fragment() {
     private fun getUserDirectory(): File {
         val email = currentUserEmail ?: throw IllegalStateException("No user logged in")
         val userDir = File(requireContext().filesDir, email.toSha256())
-
         if (!userDir.exists()) {
             userDir.mkdirs()
         }
@@ -158,14 +141,10 @@ class FilesFragment : Fragment() {
         try {
             val userDir = getUserDirectory()
             val files = userDir.listFiles()?.filter { it.name.endsWith(".enc") } ?: emptyList()
-
             fileList.clear()
             fileList.addAll(files)
             fileAdapter.notifyDataSetChanged()
-
-            // Update empty state view
             binding.emptyStateView.visibility = if (fileList.isEmpty()) View.VISIBLE else View.GONE
-
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Failed to load files: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -175,34 +154,21 @@ class FilesFragment : Fragment() {
         try {
             val userDir = getUserDirectory()
             val outputFile = File(userDir, "${file.name}.enc")
-
-            // Generate a random IV for this encryption
             val iv = ByteArray(12)
             SecureRandom().nextBytes(iv)
-
-            // Get cipher
             val cipher = getCipher(Cipher.ENCRYPT_MODE, iv)
-
-            // Encrypt the file
             FileInputStream(file).use { input ->
                 FileOutputStream(outputFile).use { output ->
-                    // Write IV at the beginning of the file
                     output.write(iv)
-
-                    // Encrypt and write the rest of the file
                     CipherOutputStream(output, cipher).use { cipherOut ->
                         input.copyTo(cipherOut)
                     }
                 }
             }
-
-            // Update the UI
             fileList.add(outputFile)
             fileAdapter.notifyDataSetChanged()
             binding.emptyStateView.visibility = View.GONE
-
             Toast.makeText(requireContext(), "File encrypted and saved", Toast.LENGTH_SHORT).show()
-
         } catch (e: Exception) {
             Toast.makeText(requireContext(), "Encryption failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -210,26 +176,17 @@ class FilesFragment : Fragment() {
 
     private fun decryptAndSaveFile(encryptedFile: File) {
         try {
-            // Create output directory if it doesn't exist
             val downloadsDir = File(requireContext().getExternalFilesDir(null), "Decrypted")
             if (!downloadsDir.exists()) downloadsDir.mkdirs()
-
-            // Prepare output file (remove .enc extension)
             val outputFileName = encryptedFile.name.removeSuffix(".enc")
             val outputFile = File(downloadsDir, outputFileName)
 
-            // Read the file and decrypt
             FileInputStream(encryptedFile).use { input ->
-                // Read the IV from the beginning of the file
                 val iv = ByteArray(12)
                 if (input.read(iv) != iv.size) {
                     throw Exception("Invalid file format. Could not read IV.")
                 }
-
-                // Initialize the cipher for decryption
                 val cipher = getCipher(Cipher.DECRYPT_MODE, iv)
-
-                // Decrypt the file
                 FileOutputStream(outputFile).use { output ->
                     CipherInputStream(input, cipher).use { cipherIn ->
                         cipherIn.copyTo(output)
@@ -254,10 +211,7 @@ class FilesFragment : Fragment() {
         if (file.delete()) {
             fileList.remove(file)
             fileAdapter.notifyDataSetChanged()
-
-            // Update empty state view
             binding.emptyStateView.visibility = if (fileList.isEmpty()) View.VISIBLE else View.GONE
-
             Toast.makeText(requireContext(), "File deleted", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(requireContext(), "Failed to delete file", Toast.LENGTH_SHORT).show()
@@ -268,8 +222,6 @@ class FilesFragment : Fragment() {
         try {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
-
-            // Check if key already exists
             if (!keyStore.containsAlias("file_encryption_key")) {
                 val keyGenerator = KeyGenerator.getInstance(
                     "AES",
@@ -289,9 +241,7 @@ class FilesFragment : Fragment() {
                 keyGenerator.generateKey()
             }
         } catch (e: Exception) {
-            // Fallback to using a secure key derived from the user's credentials
-            // This is less secure but works on devices without keystore support
-            Toast.makeText(requireContext(), "Using backup encryption method", Toast.LENGTH_SHORT).show()
+          Toast.makeText(requireContext(), "Using backup encryption method", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -299,22 +249,18 @@ class FilesFragment : Fragment() {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
 
         try {
-            // Try to use Android KeyStore
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
             val key = keyStore.getKey("file_encryption_key", null)
-
             if (mode == Cipher.ENCRYPT_MODE) {
                 cipher.init(mode, key)
             } else {
                 cipher.init(mode, key, GCMParameterSpec(128, iv))
             }
         } catch (e: Exception) {
-            // Fallback to a key derived from user credentials
             val email = currentUserEmail ?: throw IllegalStateException("No user logged in")
             val derivedKey = deriveKeyFromEmail(email)
             val secretKeySpec = SecretKeySpec(derivedKey, "AES")
-
             if (mode == Cipher.ENCRYPT_MODE) {
                 cipher.init(mode, secretKeySpec, GCMParameterSpec(128, iv))
             } else {
@@ -326,21 +272,17 @@ class FilesFragment : Fragment() {
     }
 
     private fun deriveKeyFromEmail(email: String): ByteArray {
-        // Simple key derivation - in production, use a proper KDF
         val digest = MessageDigest.getInstance("SHA-256")
         return digest.digest(email.toByteArray())
     }
 
     private fun logoutUser() {
         try {
-            // Clear current user but keep registrations
             getSecurePreferences().edit()
                 .remove("secure_user_email")
                 .apply()
 
             Toast.makeText(requireContext(), "Successfully logged out", Toast.LENGTH_SHORT).show()
-
-            // Start the login activity directly
             val intent = Intent(requireContext(), MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
@@ -360,7 +302,6 @@ class FilesFragment : Fragment() {
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
         )
     } catch (e: Exception) {
-        // Fallback to regular preferences if encryption fails
         requireContext().getSharedPreferences("secure_user_credentials", Context.MODE_PRIVATE)
     }
 

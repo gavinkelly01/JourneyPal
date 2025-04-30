@@ -20,11 +20,11 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 class GuideFragment : Fragment() {
 
     private lateinit var countryGuideAdapter: CountryGuideAdapter
-    private lateinit var guideViewModel: GuideViewModel
-    private lateinit var webView: WebView
-    private lateinit var drawerLayout: DrawerLayout
-    private lateinit var fabToggleView: FloatingActionButton
-    private lateinit var fabOpenSidebar: FloatingActionButton
+    lateinit var guideViewModel: GuideViewModel
+    lateinit var webView: WebView
+    lateinit var drawerLayout: DrawerLayout
+    lateinit var fabToggleView: FloatingActionButton
+    lateinit var fabOpenSidebar: FloatingActionButton
     private var isDarkMode = false
 
     override fun onCreateView(
@@ -84,7 +84,7 @@ class GuideFragment : Fragment() {
         return view
     }
 
-    private fun toggleDarkMode() {
+    fun toggleDarkMode() {
         isDarkMode = !isDarkMode
 
         if (isDarkMode) {
@@ -126,7 +126,7 @@ class GuideFragment : Fragment() {
     }
 
 
-    private fun setupSidebarItems(view: View) {
+    fun setupSidebarItems(view: View) {
         val sidebarContent = view.findViewById<LinearLayout>(R.id.sidebar_content)
 
         val categories = listOf(
@@ -212,7 +212,7 @@ class GuideFragment : Fragment() {
     }
 
 
-    private fun loadTravelGuide() {
+    fun loadTravelGuide() {
         val travelGuideContent = """
      <html lang="en">
 <head>

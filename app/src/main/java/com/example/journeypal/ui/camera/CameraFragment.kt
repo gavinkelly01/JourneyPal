@@ -1,7 +1,6 @@
 package com.example.journeypal.ui.camera
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -30,7 +29,6 @@ import com.example.journeypal.R
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
 import org.opencv.core.Core
-import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfPoint
 import org.opencv.core.MatOfPoint2f
@@ -53,6 +51,7 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
     private var lensFacing = CameraSelector.LENS_FACING_BACK
     private val CAMERA_REQUEST_CODE = 1001
     private var isFlashlightOn = false
+    private var currentToast: Toast? = null
 
     companion object {
         private const val TAG = "CameraFragment"
@@ -62,7 +61,6 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Initialize OpenCV
         if (!OpenCVLoader.initDebug()) {
             Log.e(TAG, "OpenCV initialization failed")
         } else {
@@ -71,19 +69,13 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
 
         val rootView = inflater.inflate(R.layout.fragment_camera, container, false)
 
-        // Initialize UI components
         previewView = rootView.findViewById(R.id.camera_preview)
         imageView = rootView.findViewById(R.id.image_view)
         toggleCameraButton = rootView.findViewById(R.id.toggle_camera_button)
         flashlightButton = rootView.findViewById(R.id.flashlight_button)
-
         cameraExecutor = Executors.newSingleThreadExecutor()
-
-        // Set up button click listeners
         toggleCameraButton.setOnClickListener { toggleCamera() }
         flashlightButton.setOnClickListener { toggleFlashlight() }
-
-        // Check for camera permission
         requestCameraPermission()
 
         return rootView
@@ -133,22 +125,16 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
 
     private fun bindCameraUseCases(cameraProvider: ProcessCameraProvider) {
         try {
-            // Unbind previous use cases
             cameraProvider.unbindAll()
 
-            // Select camera based on lens facing
             val cameraSelector = CameraSelector.Builder()
                 .requireLensFacing(lensFacing)
                 .build()
-
-            // Set up preview
             val rotation = requireActivity().windowManager.defaultDisplay.rotation
             val preview = Preview.Builder()
                 .setTargetRotation(rotation)
                 .build()
             preview.setSurfaceProvider(previewView.surfaceProvider)
-
-            // Set up image analyzer
             val imageAnalyzer = ImageAnalysis.Builder()
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build()
@@ -162,8 +148,6 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
                     image.close()
                 }
             }
-
-            // Bind all use cases to camera
             camera = cameraProvider.bindToLifecycle(
                 this,
                 cameraSelector,
@@ -198,26 +182,20 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
 
     private fun imageProxyToBitmap(image: ImageProxy): Bitmap? {
         try {
-            // Get YUV data from image
             val yBuffer = image.planes[0].buffer
             val uBuffer = image.planes[1].buffer
             val vBuffer = image.planes[2].buffer
-
             val ySize = yBuffer.remaining()
             val uSize = uBuffer.remaining()
             val vSize = vBuffer.remaining()
-
             val nv21 = ByteArray(ySize + uSize + vSize)
 
-            // U and V are swapped
             yBuffer.get(nv21, 0, ySize)
             vBuffer.get(nv21, ySize, vSize)
             uBuffer.get(nv21, ySize + vSize, uSize)
-
             val yuvImage = YuvImage(nv21, ImageFormat.NV21, image.width, image.height, null)
             val out = ByteArrayOutputStream()
             yuvImage.compressToJpeg(Rect(0, 0, image.width, image.height), 90, out)
-
             val imageBytes = out.toByteArray()
             return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
         } catch (e: Exception) {
@@ -227,53 +205,30 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
     }
 
     private fun detectPotentialCameras(bitmap: Bitmap) {
-        // Convert bitmap to OpenCV Mat
         val mat = Mat()
         Utils.bitmapToMat(bitmap, mat)
-
-        // Create a copy for drawing detection results
         val resultMat = mat.clone()
 
-        // Convert to grayscale for easier circle detection
         val grayMat = Mat()
         Imgproc.cvtColor(mat, grayMat, Imgproc.COLOR_RGB2GRAY)
-
-        // Enhance contrast
         val normalizedMat = Mat()
         Core.normalize(grayMat, normalizedMat, 0.0, 255.0, Core.NORM_MINMAX)
-
-        // Apply slight blur to reduce noise
         Imgproc.GaussianBlur(normalizedMat, normalizedMat, Size(5.0, 5.0), 0.0)
-
-        // Detect dark regions - potential hidden cameras
         val darkMask = Mat()
         Imgproc.threshold(normalizedMat, darkMask, 50.0, 255.0, Imgproc.THRESH_BINARY_INV)
-
-        // Find contours of dark regions
         val contours = ArrayList<MatOfPoint>()
         val hierarchy = Mat()
         Imgproc.findContours(darkMask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE)
-
         val detectedCircles = mutableListOf<Pair<Point, Double>>()
-
-        // Check each contour for circular shape
         for (contour in contours) {
             val area = Imgproc.contourArea(contour)
-
-            // Filter small noise and large areas
             if (area in 20.0..2000.0) {
                 val contour2f = MatOfPoint2f(*contour.toArray())
                 val center = Point()
                 val radius = FloatArray(1)
-
-                // Find minimum enclosing circle
                 Imgproc.minEnclosingCircle(contour2f, center, radius)
-
-                // Calculate circularity (1.0 is perfect circle)
                 val perimeter = Imgproc.arcLength(contour2f, true)
                 val circularity = 4 * Math.PI * area / (perimeter * perimeter)
-
-                // If shape is circular enough
                 if (circularity > 0.7) {
                     detectedCircles.add(Pair(center, radius[0].toDouble()))
                     Log.d(TAG, "Potential camera lens detected: center=$center, radius=${radius[0]}, circularity=$circularity")
@@ -281,13 +236,9 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
             }
         }
 
-        // Draw circles on the result image
         var detectionCount = 0
         for ((center, radius) in detectedCircles) {
-            // Draw green circle around potential camera lens
             Imgproc.circle(resultMat, center, radius.toInt(), Scalar(0.0, 255.0, 0.0), 2)
-
-            // Draw red crosshair for visibility
             Imgproc.line(
                 resultMat,
                 Point(center.x - radius, center.y),
@@ -303,29 +254,24 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
             detectionCount++
         }
 
-        // Show detection message if any potential cameras found
         if (detectionCount > 0) {
             activity?.runOnUiThread {
                 val message = when (detectionCount) {
                     1 -> "1 potential hidden camera detected"
                     else -> "$detectionCount potential hidden cameras detected"
                 }
-                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                currentToast?.cancel()
+                currentToast = Toast.makeText(context, message, Toast.LENGTH_LONG)
+                currentToast?.show()
             }
         }
-
-        // Display the result on the image view
         val resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(), Bitmap.Config.ARGB_8888)
         Utils.matToBitmap(resultMat, resultBitmap)
-
-        // Rotate the bitmap if necessary (camera image is usually rotated by default)
         val rotatedBitmap = rotateBitmap(resultBitmap, 90)
 
         activity?.runOnUiThread {
             imageView.setImageBitmap(rotatedBitmap)
         }
-
-        // Release OpenCV resources
         mat.release()
         resultMat.release()
         grayMat.release()
@@ -334,10 +280,23 @@ class CameraFragment : Fragment(R.layout.fragment_camera) {
         hierarchy.release()
     }
 
-    private fun rotateBitmap(bitmap: Bitmap, degrees: Int): Bitmap {
+    fun rotateBitmap(bitmap: Bitmap, degrees: Int): Bitmap {
         val matrix = android.graphics.Matrix()
         matrix.postRotate(degrees.toFloat())
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    // Show Toast when fragment is resumed
+    override fun onResume() {
+        super.onResume()
+        // Show a toast indicating the fragment is active (if necessary)
+        Toast.makeText(context, "Camera Fragment is active", Toast.LENGTH_SHORT).show()
+    }
+
+    // Cancel the toast when the fragment is paused or destroyed
+    override fun onPause() {
+        super.onPause()
+        currentToast?.cancel()  // Dismiss the current toast when the fragment is paused
     }
 
     override fun onDestroyView() {

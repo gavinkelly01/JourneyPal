@@ -46,7 +46,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
     private val binding get() = _binding!!
     private lateinit var googleMap: GoogleMap
     private var currentMarker: Marker? = null
-    private val filterChips = mutableMapOf<String, Chip>()
+    val filterChips: MutableMap<String, Chip> = mutableMapOf()
     private val defaultLatLng = LatLng(0.0, 0.0)
     private val defaultZoom = 2.0f
     private var isCountryInfoMinimized = true
@@ -85,7 +85,7 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         val chipMap = mapOf(
             "women" to binding.filterWomen,
             "people_of_color" to binding.filterPeopleOfColour,
-            "LGBTQ" to binding.filterLgbt,
+            "lgbtq" to binding.filterLgbt,
             "disabilities" to binding.filterDisabilities,
             "religious_freedom" to binding.filterReligiousFreedom,
             "immigrants_refugees" to binding.filterImmigrantsRefugees,
@@ -110,13 +110,10 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             requestLocationPermission()
             return
         }
-
-        if ("LGBTQ" !in getSelectedFilters()) return
-
+        if ("lgbtq" !in getSelectedFilters()) return
         val latLng = googleMap.cameraPosition.target
         val bounds = createBounds(latLng, 0.09)
         val placesRequest = FindCurrentPlaceRequest.newInstance(listOf(Place.Field.NAME, Place.Field.LAT_LNG))
-
         placesClient.findCurrentPlace(placesRequest)
             .addOnSuccessListener { response ->
                 response.placeLikelihoods
@@ -209,14 +206,10 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             }
         }
 
-        binding.minimizeButton.setOnClickListener {
-            animateButtonClick(it) {
-                if (binding.countryInfoContainer.visibility == View.VISIBLE) {
-                    toggleCountryInfoContainer()
-                } else {
-                    toggleFilters()
-                }
-            }
+
+
+        binding.resetButton.setOnClickListener {
+            resetMapToDefault()
         }
 
 
@@ -332,7 +325,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         googleMap = map
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, defaultZoom))
         googleMap.uiSettings.isZoomControlsEnabled = true
-
         googleMap.setOnMapClickListener { latLng ->
             if (isHeatmapVisible) {
                 Toast.makeText(requireContext(), "Disable heatmap to select individual countries", Toast.LENGTH_SHORT).show()
@@ -387,11 +379,11 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
-    private fun getSelectedFilters(): List<String> {
+    fun getSelectedFilters(): List<String> {
         return filterChips.filter { it.value.isChecked }.map { it.key }
     }
 
-    private fun showSafetyInfo(latLng: LatLng, filters: List<String>) {
+    fun showSafetyInfo(latLng: LatLng, filters: List<String>) {
         lifecycleScope.launch {
             val countryName = getCountryNameFromLatLng(latLng)
             if (countryName != "Unknown") {
@@ -569,6 +561,10 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
                 }
                 .start()
         }
+    }
+
+    interface Checkable {
+        val isChecked: Boolean
     }
 
     @Suppress("DEPRECATION")

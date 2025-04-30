@@ -56,7 +56,7 @@ class LiveAlerts : Fragment() {
         binding.newsRecyclerView.layoutManager = LinearLayoutManager(requireContext())
     }
 
-    private fun getLocationAndFetchNews() {
+    fun getLocationAndFetchNews() {
         // Check if the location permission is granted
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
@@ -103,7 +103,7 @@ class LiveAlerts : Fragment() {
         }
     }
 
-    private fun fetchLocationAndNews() {
+    fun fetchLocationAndNews() {
         if (ActivityCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -140,10 +140,31 @@ class LiveAlerts : Fragment() {
         }
     }
 
+    fun parseNewsJson(responseBody: String): List<NewsItem> {
+        val newsItems = mutableListOf<NewsItem>()
+        val json = JSONObject(responseBody)
+        val articles = json.optJSONArray("data") ?: return emptyList()
 
-    private fun fetchLocalNews(cityName: String, countryCode: String) {
+        for (i in 0 until articles.length()) {
+            val article = articles.getJSONObject(i)
+            newsItems.add(
+                NewsItem(
+                    title = article.optString("title"),
+                    link = article.optString("link"),
+                    snippet = article.optString("snippet"),
+                    photoUrl = article.optString("photo_url"),
+                    thumbnailUrl = article.optString("thumbnail_url"),
+                    publishedAt = article.optString("published_datetime_utc")
+                )
+            )
+        }
+
+        return newsItems
+    }
+
+
+    fun fetchLocalNews(cityName: String, countryCode: String) {
         binding.progressBar.visibility = View.VISIBLE
-
         val client = OkHttpClient()
         val url =
             "https://real-time-news-data.p.rapidapi.com/local-headlines?query=$cityName&country=$countryCode&lang=en&limit=10"
@@ -193,7 +214,6 @@ class LiveAlerts : Fragment() {
                     return@launch
                 }
 
-                // Continue with processing the successful response
                 val json = JSONObject(responseBody)
                 val articles = json.optJSONArray("data")
 
@@ -231,7 +251,6 @@ class LiveAlerts : Fragment() {
                 }
 
             } catch (e: Exception) {
-                // Log any exceptions
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
                     Log.e("LiveAlerts", "Error: ${e.message}", e)

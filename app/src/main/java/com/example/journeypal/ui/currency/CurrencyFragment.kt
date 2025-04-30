@@ -15,22 +15,32 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.json.JSONObject
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import java.text.NumberFormat
 
 class CurrencyFragment : Fragment() {
     private var _binding: FragmentCurrencyBinding? = null
-    private val binding get() = _binding!!
+    val binding get() = _binding!!
 
     private val currencies = listOf(
-        "EUR", "USD",  "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "BRL",
+        "EUR", "USD", "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "BRL",
         "MXN", "NZD", "SEK", "NOK", "DKK", "ZAR", "SGD", "HKD", "KRW", "THB",
         "IDR", "TRY", "RUB", "PLN", "HUF", "CZK", "MYR", "PHP", "AED", "SAR",
         "ILS", "EGP", "PKR", "NGN", "ARS", "CLP", "COP", "TWD", "VND", "BDT"
     )
 
-    private var baseCurrency = "EURO"
-    private var targetCurrency = "USD"
+    var baseCurrency = "EUR"
+    var targetCurrency = "USD"
+
+    private val gson = Gson()
+
+    private var httpClient: OkHttpClient = OkHttpClient() // Default client
+
+    // Renamed function to avoid the declaration clash
+    fun injectHttpClient(client: OkHttpClient) {
+        httpClient = client
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -61,7 +71,6 @@ class CurrencyFragment : Fragment() {
                 baseCurrency = currencies[position]
                 fetchExchangeRate()
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
         binding.targetCurrencySpinner.adapter = adapter
@@ -70,7 +79,6 @@ class CurrencyFragment : Fragment() {
                 targetCurrency = currencies[position]
                 fetchExchangeRate()
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
@@ -91,7 +99,7 @@ class CurrencyFragment : Fragment() {
         }
     }
 
-    private fun fetchExchangeRate() {
+    fun fetchExchangeRate() {
         binding.progressBar.visibility = View.VISIBLE
         binding.resultTextView.text = "Fetching exchange rate..."
         val amount = try {
@@ -103,11 +111,8 @@ class CurrencyFragment : Fragment() {
             try {
                 val rate = getExchangeRate(baseCurrency, targetCurrency)
                 val convertedAmount = amount * rate
-
-                // Format results
                 val formatter = NumberFormat.getCurrencyInstance()
                 formatter.currency = java.util.Currency.getInstance(targetCurrency)
-
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
                     binding.resultTextView.text = """
@@ -127,22 +132,24 @@ class CurrencyFragment : Fragment() {
         }
     }
 
-    private suspend fun getExchangeRate(base: String, target: String): Double = withContext(Dispatchers.IO) {
-        val client = OkHttpClient()
+    // Changed to use Gson for JSON parsing
+    public suspend fun getExchangeRate(base: String, target: String): Double = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url("https://open.exchangerate-api.com/v6/latest/$base")
             .build()
 
-        client.newCall(request).execute().use { response ->
+        httpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw Exception("Failed to fetch exchange rate")
-
             val jsonResponse = response.body?.string() ?: throw Exception("Empty response")
-            val jsonObject = JSONObject(jsonResponse)
-
-            val rates = jsonObject.getJSONObject("rates")
-            rates.getDouble(target)
+            val rateResponse = gson.fromJson(jsonResponse, RateResponse::class.java)
+            rateResponse.rates[target] ?: throw Exception("Rate not found")
         }
     }
+
+    // Data class for the Gson parser
+    data class RateResponse(
+        @SerializedName("rates") val rates: Map<String, Double>
+    )
 
     override fun onDestroyView() {
         super.onDestroyView()

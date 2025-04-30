@@ -9,36 +9,23 @@
     tools:context=".ui.home.HomeFragment">
 
     <!-- Header Section -->
+
+    <!-- Modern Search Bar (Grindr-style) -->
+
+
     <ImageView
         android:id="@+id/logo"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="16dp"
+        android:layout_width="259dp"
+        android:layout_height="155dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
         android:background="@android:color/transparent"
         android:contentDescription="App Logo"
         android:scaleType="centerInside"
-        android:src="@drawable/logo"
+        android:src="@drawable/journeypalfullnobck"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/text_home"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:layout_marginStart="16dp"
-        android:textSize="24sp"
-        android:text="@string/home_page"
-        android:textAlignment="textStart"
-        android:textAppearance="?attr/textAppearanceHeadlineMedium"
-        android:textColor="?attr/colorOnSurface"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toEndOf="@id/logo"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Modern Search Bar (Grindr-style) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/search_card"
         android:layout_width="0dp"
@@ -91,14 +78,14 @@
                 android:layout_height="30dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Filters"
+                android:scaleType="centerInside"
                 android:src="@drawable/icons8_filter_100"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.978"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:tint="?attr/colorPrimary"
-                android:scaleType="centerInside" />
+                app:tint="?attr/colorPrimary" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.card.MaterialCardView>
@@ -221,21 +208,19 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Map Fragment (Stretched to bottom) -->
-
-    <!-- Map Controls Section (Always in front of map) -->
-
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/map_fragment"
         android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="402dp"
-        android:layout_height="499dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/search_card"
-        app:layout_constraintVertical_bias="0.875" />
+        android:layout_width="0dp"
+    android:layout_height="0dp"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@id/search_card"
+    app:layout_constraintVertical_bias="0.0" />
 
+
+    <!-- Map Controls Section (Always in front of map) -->
     <LinearLayout
         android:id="@+id/mapControlsLayout"
         android:layout_width="34dp"
@@ -369,7 +354,7 @@
         app:srcCompat="@drawable/icons8_layer_50" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/minimizeButton"
+        android:id="@+id/resetButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="Reset"

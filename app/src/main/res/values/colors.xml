@@ -1,62 +1,60 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Primary brand colors -->
-    <color name="brandPrimary">#6200EE</color> <!-- A strong purple shade -->
-    <color name="brandPrimaryVariant">#3700B3</color> <!-- Darker purple variant -->
-    <color name="brandSecondary">#03DAC5</color> <!-- Teal accent color -->
-    <color name="brandSecondaryVariant">#018786</color> <!-- Darker teal variant -->
+    <color name="brandPrimary">#174461</color>
+    <color name="brandPrimaryVariant">#0F2C42</color>
+    <color name="brandSecondary">#03DAC5</color>
+    <color name="brandSecondaryVariant">#018786</color>
     <color name="background_color">#FFFFFF</color>
+
     <!-- Neutral Colors -->
-    <color name="black">#000000</color> <!-- Black color -->
-    <color name="white">#FFFFFF</color> <!-- White color -->
-    <color name="greyLight">#F1F1F1</color> <!-- Light grey for background -->
-    <color name="greyDark">#757575</color> <!-- Dark grey for text or borders -->
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="greyLight">#F1F1F1</color>
+    <color name="greyDark">#757575</color>
 
     <!-- Surface and background colors -->
-    <color name="surfaceBackground">#FFFFFF</color> <!-- White background for content -->
-    <color name="backgroundMain">#F4F4F9</color> <!-- Very light grey background for overall layout -->
+    <color name="surfaceBackground">#FFFFFF</color>
+    <color name="backgroundMain">#F4F4F9</color>
 
     <!-- Text colors -->
-    <color name="textPrimary">#212121</color> <!-- Dark text for better readability -->
-    <color name="textSecondary">#757575</color> <!-- Light grey text for secondary content -->
+    <color name="textPrimary">#212121</color>
+    <color name="textSecondary">#757575</color>
 
     <!-- Error and Alert colors -->
-    <color name="redError">#D32F2F</color> <!-- Error color for alerts, warnings, or form errors -->
+    <color name="redError">#D32F2F</color>
+    <color name="teal_200">#BB86FC</color>
+    <color name="purple_200">#BB86FC</color>
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="teal_700">#018786</color>
 
-    <!-- Missing colors (added for the error you mentioned) -->
-    <color name="purple_200">#BB86FC</color> <!-- Light purple for backgrounds -->
-    <color name="purple_500">#6200EE</color> <!-- Original purple -->
-    <color name="purple_700">#3700B3</color> <!-- Darker purple -->
-    <color name="teal_200">#03DAC5</color> <!-- Teal -->
-    <color name="teal_700">#018786</color> <!-- Darker teal -->
+    <!-- Primary brand colors -->
+    <color name="primary">#174461</color>
+    <color name="primary_variant">#0F2C42</color>
+    <color name="secondary">#10B981</color>
+    <color name="secondary_variant">#059669</color>
 
-        <!-- Primary brand colors -->
-        <color name="primary">#1E3A8A</color>        <!-- Deep blue for security feel -->
-        <color name="primary_variant">#0F1F4B</color> <!-- Darker variation -->
-        <color name="secondary">#10B981</color>       <!-- Green for positive status -->
-        <color name="secondary_variant">#059669</color>
+    <!-- Background colors -->
+    <color name="background_primary">#F8FAFC</color>
+    <color name="nav_background">#FFFFFF</color>
+    <color name="toolbar_background">#174461</color>
+    <color name="status_bar_scrim">#172554</color>
 
-        <!-- Background colors -->
-        <color name="background_primary">#F8FAFC</color> <!-- Light background for readability -->
-        <color name="nav_background">#FFFFFF</color>     <!-- Pure white for nav bar -->
-        <color name="toolbar_background">#1E3A8A</color> <!-- Match primary -->
-        <color name="status_bar_scrim">#172554</color>   <!-- Darker than primary for status bar -->
+    <!-- Text colors -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="text_on_emergency">#FFFFFF</color>
 
-        <!-- Text colors -->
-        <color name="text_primary">#FFFFFF</color>       <!-- White text on dark backgrounds -->
-        <color name="text_secondary">#64748B</color>     <!-- Subtle gray for secondary text -->
-        <color name="text_on_emergency">#FFFFFF</color>  <!-- White text on emergency card -->
+    <!-- UI element colors -->
+    <color name="ripple_color">#3082F6</color>
+    <color name="emergency_card_background">#DC2626</color>
+    <color name="emergency_button">#991B1B</color>
+    <color name="verified_badge">#10B981</color>
+    <color name="alert_yellow">#F59E0B</color>
+    <color name="alert_red">#EF4444</color>
 
-        <!-- UI element colors -->
-        <color name="ripple_color">#3082F6</color>       <!-- Light blue ripple effect -->
-        <color name="emergency_card_background">#DC2626</color> <!-- Red for emergency -->
-        <color name="emergency_button">#991B1B</color>   <!-- Darker red for buttons -->
-        <color name="verified_badge">#10B981</color>     <!-- Green for security verification -->
-        <color name="alert_yellow">#F59E0B</color>       <!-- Yellow for warnings -->
-        <color name="alert_red">#EF4444</color>          <!-- Red for alerts -->
-
-        <!-- Bottom navigation selector -->
-        <color name="nav_item_selected">#1E3A8A</color>  <!-- Primary color when selected -->
-        <color name="nav_item_unselected">#94A3B8</color><!-- Subtle gray when not selected -->
+    <!-- Bottom navigation selector -->
+    <color name="nav_item_selected">#174461</color>
+    <color name="nav_item_unselected">#94A3B8</color>
 
 </resources>

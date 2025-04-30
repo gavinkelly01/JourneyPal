@@ -27,14 +27,6 @@
             style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/voiceModeButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Voice"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/cameraModeButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -96,20 +88,6 @@
             android:importantForAccessibility="yes" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Voice Input Instructions -->
-    <TextView
-        android:id="@+id/voiceInstructions"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:text="Press and hold to speak, release to translate"
-        android:textSize="16sp"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/sourceTextLayout"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
     <!-- Camera Preview -->
     <androidx.camera.view.PreviewView
         android:id="@+id/cameraPreviewView"
@@ -129,22 +107,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="Translate"
-        app:layout_constraintTop_toBottomOf="@id/voiceInstructions"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Visual Feedback for Voice Mode -->
-    <Button
-        android:id="@+id/holdToSpeakButton"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_marginTop="16dp"
-        android:text="Hold to Speak"
-        android:textSize="18sp"
-        android:background="@drawable/rounded_button"
-        android:visibility="gone"
-        android:textColor="@color/white"
-        app:layout_constraintTop_toBottomOf="@id/translateButton"
+        app:layout_constraintTop_toBottomOf="@id/cameraPreviewView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -155,7 +118,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/holdToSpeakButton"
+        app:layout_constraintTop_toBottomOf="@id/translateButton"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

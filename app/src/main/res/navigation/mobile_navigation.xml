@@ -54,6 +54,12 @@
         tools:layout="@layout/fragment_camera" />
 
     <fragment
+        android:id="@+id/WeatherFragment"
+        android:name="com.example.journeypal.ui.weather.WeatherFragment"
+        android:label="Local Weather"
+        tools:layout="@layout/fragment_weather" />
+
+    <fragment
         android:id="@+id/navigation_storage"
         android:name="com.example.journeypal.ui.storage.LoginFragment"
         android:label="@string/title_storage"
