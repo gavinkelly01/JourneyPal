@@ -37,11 +37,11 @@
         <!-- Login fragment actions (if any) -->
     </fragment>
 
-    <fragment
-        android:id="@+id/locationSharingFragment"
-        android:name="com.example.journeypal.ui.location.LocationSharingFragment"
-        android:label="Location Sharing" />
 
+    <fragment
+        android:id="@+id/WeatherFragment"
+        android:name="com.example.journeypal.ui.weather.WeatherFragment"
+        android:label="Local Weather" />
 
     <!-- Add other fragments as needed -->
 

@@ -32,4 +32,5 @@
     <string name="title_translator" >Translate</string>
     <string name="title_emergency">Emergency SOS</string>
     <string name="title_location"> Live Location</string>
+    <string name="title_weather">Local Weather</string>
 </resources>

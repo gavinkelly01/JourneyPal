@@ -110,13 +110,10 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
             requestLocationPermission()
             return
         }
-
         if ("LGBTQ" !in getSelectedFilters()) return
-
         val latLng = googleMap.cameraPosition.target
         val bounds = createBounds(latLng, 0.09)
         val placesRequest = FindCurrentPlaceRequest.newInstance(listOf(Place.Field.NAME, Place.Field.LAT_LNG))
-
         placesClient.findCurrentPlace(placesRequest)
             .addOnSuccessListener { response ->
                 response.placeLikelihoods
@@ -332,7 +329,6 @@ class HomeFragment : Fragment(), OnMapReadyCallback {
         googleMap = map
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(defaultLatLng, defaultZoom))
         googleMap.uiSettings.isZoomControlsEnabled = true
-
         googleMap.setOnMapClickListener { latLng ->
             if (isHeatmapVisible) {
                 Toast.makeText(requireContext(), "Disable heatmap to select individual countries", Toast.LENGTH_SHORT).show()

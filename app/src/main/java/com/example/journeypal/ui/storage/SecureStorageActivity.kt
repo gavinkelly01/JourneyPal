@@ -111,7 +111,7 @@ class SecureStorageActivity : AppCompatActivity() {
         }
     }
 
-    private fun isPermissionGranted(): Boolean {
+    fun isPermissionGranted(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             true
         } else {
@@ -145,7 +145,7 @@ class SecureStorageActivity : AppCompatActivity() {
         }
     }
 
-    private fun resolveUriToFile(uri: Uri): File {
+    fun resolveUriToFile(uri: Uri): File {
         val contentResolver: ContentResolver = contentResolver
         return try {
             val inputStream = contentResolver.openInputStream(uri)
@@ -179,7 +179,7 @@ class SecureStorageActivity : AppCompatActivity() {
         }
     }
 
-    private fun encryptFile(file: File, directory: File): File {
+    fun encryptFile(file: File, directory: File): File {
         val cipher = getCipher(Cipher.ENCRYPT_MODE)
         val encryptedFile = File(directory, "${file.name}.enc")
         val iv = cipher.iv
@@ -258,7 +258,7 @@ class SecureStorageActivity : AppCompatActivity() {
         }
     }
 
-    private fun decryptFile(encryptedFile: File): File {
+    fun decryptFile(encryptedFile: File): File {
         FileInputStream(encryptedFile).use { input ->
             val iv = ByteArray(12)
             if (input.read(iv) != iv.size) {

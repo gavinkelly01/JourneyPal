@@ -20,7 +20,7 @@ import java.text.NumberFormat
 
 class CurrencyFragment : Fragment() {
     private var _binding: FragmentCurrencyBinding? = null
-    private val binding get() = _binding!!
+    val binding get() = _binding!!
 
     private val currencies = listOf(
         "EUR", "USD",  "GBP", "JPY", "CAD", "AUD", "CHF", "CNY", "INR", "BRL",
@@ -29,8 +29,8 @@ class CurrencyFragment : Fragment() {
         "ILS", "EGP", "PKR", "NGN", "ARS", "CLP", "COP", "TWD", "VND", "BDT"
     )
 
-    private var baseCurrency = "EURO"
-    private var targetCurrency = "USD"
+    var baseCurrency = "EURO"
+    var targetCurrency = "USD"
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -61,7 +61,6 @@ class CurrencyFragment : Fragment() {
                 baseCurrency = currencies[position]
                 fetchExchangeRate()
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
         binding.targetCurrencySpinner.adapter = adapter
@@ -70,7 +69,6 @@ class CurrencyFragment : Fragment() {
                 targetCurrency = currencies[position]
                 fetchExchangeRate()
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
@@ -91,7 +89,7 @@ class CurrencyFragment : Fragment() {
         }
     }
 
-    private fun fetchExchangeRate() {
+    fun fetchExchangeRate() {
         binding.progressBar.visibility = View.VISIBLE
         binding.resultTextView.text = "Fetching exchange rate..."
         val amount = try {
@@ -103,11 +101,8 @@ class CurrencyFragment : Fragment() {
             try {
                 val rate = getExchangeRate(baseCurrency, targetCurrency)
                 val convertedAmount = amount * rate
-
-                // Format results
                 val formatter = NumberFormat.getCurrencyInstance()
                 formatter.currency = java.util.Currency.getInstance(targetCurrency)
-
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
                     binding.resultTextView.text = """
@@ -132,13 +127,10 @@ class CurrencyFragment : Fragment() {
         val request = Request.Builder()
             .url("https://open.exchangerate-api.com/v6/latest/$base")
             .build()
-
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw Exception("Failed to fetch exchange rate")
-
             val jsonResponse = response.body?.string() ?: throw Exception("Empty response")
             val jsonObject = JSONObject(jsonResponse)
-
             val rates = jsonObject.getJSONObject("rates")
             rates.getDouble(target)
         }

@@ -39,10 +39,8 @@ class EmergencySosFragment : Fragment() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var countDownTimer: CountDownTimer? = null
     private var isCountingDown = false
-
     private val emergencyContacts = mutableListOf<EmergencyContact>()
     private val emergencyPhoneNumber = "" // 112 or any default number
-
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -75,14 +73,11 @@ class EmergencySosFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity())
-
         loadEmergencyContacts() // Load saved contacts
         updateEmergencyContactsList()
-
         binding.addContactButton.setOnClickListener {
             showAddContactDialog()
         }
-
         checkAndRequestPermissions()
         setupSosButton()
     }
@@ -102,7 +97,6 @@ class EmergencySosFragment : Fragment() {
         binding.sosButton.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.redError))
         binding.countdownText.visibility = View.VISIBLE
         isCountingDown = true
-
         countDownTimer = object : CountDownTimer(5000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val secondsLeft = millisUntilFinished / 1000
@@ -167,7 +161,6 @@ class EmergencySosFragment : Fragment() {
             throw SecurityException("Location permission not granted")
         }
 
-        // Creating a LocationRequest with high accuracy
         val locationRequest = LocationRequest.create().apply {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY // Set the desired priority here
         }
@@ -175,7 +168,6 @@ class EmergencySosFragment : Fragment() {
         return fusedLocationClient.getCurrentLocation(locationRequest.priority, object : CancellationToken() {
             override fun onCanceledRequested(listener: OnTokenCanceledListener) =
                 CancellationTokenSource().token
-
             override fun isCancellationRequested() = false
         }).await() ?: throw Exception("Could not get current location")
     }
@@ -185,7 +177,6 @@ class EmergencySosFragment : Fragment() {
         val longitude = location.longitude
         val mapsUrl = "https://maps.google.com/?q=$latitude,$longitude"
         val message = "🚨 EMERGENCY SOS 🚨\nI need help! My current location is:\n$mapsUrl"
-
         if (emergencyContacts.isEmpty()) {
             Toast.makeText(requireContext(), "No emergency contacts available", Toast.LENGTH_SHORT).show()
             return
@@ -224,11 +215,9 @@ class EmergencySosFragment : Fragment() {
             Manifest.permission.ACCESS_COARSE_LOCATION,
             Manifest.permission.SEND_SMS
         )
-
         val missingPermissions = requiredPermissions.filter {
             ContextCompat.checkSelfPermission(requireContext(), it) != PackageManager.PERMISSION_GRANTED
         }.toTypedArray()
-
         if (missingPermissions.isNotEmpty()) {
             requestPermissionLauncher.launch(missingPermissions)
             binding.sosButton.isEnabled = false
@@ -243,10 +232,8 @@ class EmergencySosFragment : Fragment() {
 
     private fun loadEmergencyContacts() {
         emergencyContacts.clear()
-
         val sharedPreferences = requireActivity().getSharedPreferences("EmergencyContacts", 0)
         val count = sharedPreferences.getInt("count", 0)
-
         for (i in 0 until count) {
             val name = sharedPreferences.getString("name_$i", "") ?: ""
             val phone = sharedPreferences.getString("phone_$i", "") ?: ""
@@ -255,7 +242,6 @@ class EmergencySosFragment : Fragment() {
                 emergencyContacts.add(EmergencyContact(name, phone))
             }
         }
-
         if (emergencyContacts.isEmpty()) {
             loadSampleEmergencyContacts()
             saveEmergencyContacts()
@@ -266,7 +252,6 @@ class EmergencySosFragment : Fragment() {
         val sharedPreferences = requireActivity().getSharedPreferences("EmergencyContacts", 0)
         val editor = sharedPreferences.edit()
         editor.clear()
-
         emergencyContacts.forEachIndexed { index, contact ->
             editor.putString("name_$index", contact.name)
             editor.putString("phone_$index", contact.phoneNumber)
@@ -277,22 +262,18 @@ class EmergencySosFragment : Fragment() {
 
     private fun updateEmergencyContactsList() {
         binding.emergencyContactsContainer.removeAllViews()
-
         for ((index, contact) in emergencyContacts.withIndex()) {
             val contactView = layoutInflater.inflate(
                 R.layout.emergency_contact,
                 binding.emergencyContactsContainer,
                 false
             )
-
             val nameTextView = contactView.findViewById<TextView>(R.id.contactName)
             val numberTextView = contactView.findViewById<TextView>(R.id.contactNumber)
             val editButton = contactView.findViewById<ImageButton>(R.id.editContactButton)
             val deleteButton = contactView.findViewById<ImageButton>(R.id.deleteContactButton)
-
             nameTextView.text = contact.name
             numberTextView.text = contact.phoneNumber
-
             editButton.setOnClickListener {
                 showEditContactDialog(index, contact)
             }
@@ -314,7 +295,6 @@ class EmergencySosFragment : Fragment() {
         val dialogView = layoutInflater.inflate(R.layout.edit_contacts, null)
         val nameEditText = dialogView.findViewById<EditText>(R.id.editContactName)
         val phoneEditText = dialogView.findViewById<EditText>(R.id.editContactPhone)
-
         AlertDialog.Builder(requireContext())
             .setTitle("Add Emergency Contact")
             .setView(dialogView)
@@ -339,17 +319,14 @@ class EmergencySosFragment : Fragment() {
         val dialogView = layoutInflater.inflate(R.layout.edit_contacts, null)
         val nameEditText = dialogView.findViewById<EditText>(R.id.editContactName)
         val phoneEditText = dialogView.findViewById<EditText>(R.id.editContactPhone)
-
         nameEditText.setText(contact.name)
         phoneEditText.setText(contact.phoneNumber)
-
         AlertDialog.Builder(requireContext())
             .setTitle("Edit Emergency Contact")
             .setView(dialogView)
             .setPositiveButton("Save") { _, _ ->
                 val name = nameEditText.text.toString().trim()
                 val phone = phoneEditText.text.toString().trim()
-
                 if (name.isNotEmpty() && phone.isNotEmpty()) {
                     emergencyContacts[index] = EmergencyContact(name, phone)
                     updateEmergencyContactsList()

@@ -34,9 +34,9 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:usesCleartextTraffic="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/journeypal_fulllogo"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/journeypal_logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.JourneyPal"
         tools:targetApi="31">

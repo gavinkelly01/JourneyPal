@@ -143,7 +143,6 @@ class LiveAlerts : Fragment() {
 
     private fun fetchLocalNews(cityName: String, countryCode: String) {
         binding.progressBar.visibility = View.VISIBLE
-
         val client = OkHttpClient()
         val url =
             "https://real-time-news-data.p.rapidapi.com/local-headlines?query=$cityName&country=$countryCode&lang=en&limit=10"
