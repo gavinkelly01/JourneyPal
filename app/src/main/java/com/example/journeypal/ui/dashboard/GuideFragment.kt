@@ -25,7 +25,7 @@ class GuideFragment : Fragment() {
     lateinit var drawerLayout: DrawerLayout
     lateinit var fabToggleView: FloatingActionButton
     lateinit var fabOpenSidebar: FloatingActionButton
-    private var isDarkMode = false
+    var isDarkMode = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -80,7 +80,6 @@ class GuideFragment : Fragment() {
         })
 
         guideViewModel.fetchScams("Thailand")
-
         return view
     }
 

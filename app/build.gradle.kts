@@ -152,6 +152,7 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation ("io.mockk:mockk:1.12.0")
     testImplementation ("io.mockk:mockk:1.13.10")
+    testImplementation ("com.squareup.okhttp3:mockwebserver:4.9.1")
     androidTestImplementation ("io.mockk:mockk-android:1.13.10")
 
     // Instrumentation testing
